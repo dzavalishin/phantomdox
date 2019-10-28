@@ -1,5 +1,6 @@
+==================
 What Phantom OS is
-------------------
+==================
 
 To be short:
 
@@ -27,6 +28,12 @@ Which subsystems Phantom currently includes:
 - Phantom language compiler - the most native userland language
 - Java to Phantom translator - work in progress
 - Python to Phantom translator - just started
+
+Technical information and links:
+
+- `Source code <https://github.com/dzavalishin/phantomuserland/>`_
+- `Wiki <https://github.com/dzavalishin/phantomuserland/wiki>`_
+- `Web site <http://phantomos.org>`_
 
 Do we need one more OS
 ----------------------

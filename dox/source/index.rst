@@ -4,8 +4,13 @@
 .. rem    :caption: Contents:
 
 
-Welcome to Phantom OS Project
-=============================
+""""""""""""""""""""""""""""""""""""
+The Phantom Operating System Project
+""""""""""""""""""""""""""""""""""""
+
+.........................................
+Persistent OS: introduction and Reference
+.........................................
 
 .. only:: html
 
@@ -17,3 +22,5 @@ Welcome to Phantom OS Project
 
 
 .. include:: introduction.rst.inc
+
+.. include:: kernelapi.rst.inc
