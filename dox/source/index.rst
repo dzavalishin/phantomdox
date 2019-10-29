@@ -4,13 +4,13 @@
 .. rem    :caption: Contents:
 
 
-""""""""""""""""""""""""""""""""""""
-The Phantom Operating System Project
-""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""
+The Phantom Operating System
+""""""""""""""""""""""""""""
 
-.........................................
-Persistent OS: introduction and Reference
-.........................................
+..........................
+Introduction and Reference
+..........................
 
 .. only:: html
 

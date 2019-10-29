@@ -65,7 +65,7 @@ What is good about persistent environment?
 You don't need files any more
 -----------------------------
 
-Relly. The file is just a tool which helps program to survive 
+Really. The file is just a tool which helps program to survive 
 for the time computer is being turned off. If operating system
 hides this situation from you, there is no need to save anything
 to file. Any variable is... like file now? It just keeps its value
@@ -127,3 +127,4 @@ deplpyment rules, no setup. Just 5-10 lines of code.
 
 What Phantom OS is going to be - an environment where simple goals can be
 achieved in a simple way.
+
