@@ -13,7 +13,7 @@ class and uses it to access kernel API. Sometimes there are
 handy wrappers from ``.phantom`` package.
 
 -----------------
-.internal package
+Package .internal
 -----------------
 
 .internal.string
@@ -71,11 +71,13 @@ Graphical image. Used for painting backgrounds and icons in UI code.
 Parse PPM (P6) bitmap file contents. Alpha set to 255.
 
 .. code:: java
+
     void loadFromString(var src : string);
 
 There is a way to import images into the Phantom program:
 
 .. code:: java
+
     bmpw = new .internal.bitmap();
     bmpw.loadFromString(import "../resources/backgrounds/weather_sun_sm.ppm");
   
@@ -114,10 +116,11 @@ Correspondingly, wait for event, wait with timeout, broadcast (wake up all waite
 signal - wake up one waiting thread. 
 
 .. code:: java
-  void wait( var toUnlock : .internal.mutex );
-  void twait( var toUnlock : .internal.mutex, var waitTimeMsec : int );
-  void broadcast();
-  void signal();
+
+    void wait( var toUnlock : .internal.mutex );
+    void twait( var toUnlock : .internal.mutex, var waitTimeMsec : int );
+    void broadcast();
+    void signal();
 
 
 .internal.mutex
@@ -126,14 +129,15 @@ signal - wake up one waiting thread.
 Mutex synchronization primitive. Take or release mutex.
 
 .. code:: java
-  void lock();
-  void unlock();
 
-  ...
-  mtx.lock();
-  update complex state
-  mtx.unlock();
-  ...
+    void lock();
+    void unlock();
+
+    ...
+    mtx.lock();
+    update complex state
+    mtx.unlock();
+    ...
 
 
 .internal.directory
@@ -142,24 +146,28 @@ Mutex synchronization primitive. Take or release mutex.
 Hash map.
 
 .. code:: java
-  int put( var key : .internal.string, var value );
-  .internal.object get( var key );
-  int remove( var key : .internal.string );
-  int size();
+
+    int put( var key : .internal.string, var value );
+    .internal.object get( var key );
+    int remove( var key : .internal.string );
+    int size();
 
 
 
 
+Numeric classes
+---------------
 
+Classes ``.internal.int``, ``.internal.long``, ``.internal.float`` and ``.internal.double``
+represent numeric types.
 
-
-
+The only notable method now is ``toString()``.
 
 
 
 
 ----------------
-.phantom package
+Package .phantom
 ----------------
 
 Classes in ``.phantom`` package are not implemented in kernel but 
@@ -172,6 +180,7 @@ This is a base class for Phantom OS application program. Instances of this class
 are application instances - documents, for example.
 
 .. code:: java
+
   class .dz.clock extends .phantom.application 
   {
     .internal.bitmap appIcon;
@@ -200,6 +209,11 @@ are application instances - documents, for example.
   }
 
 
+.phantom.runnable
+-----------------
+
+Abstract base class for various callbacks and code that can be
+run in a thread.
 
 
 
