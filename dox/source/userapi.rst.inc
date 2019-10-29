@@ -75,13 +75,14 @@ Parse PPM (P6) bitmap file contents. Alpha set to 255.
 
 There is a way to import images into the Phantom program:
 
+.. code:: java
     bmpw = new .internal.bitmap();
     bmpw.loadFromString(import "../resources/backgrounds/weather_sun_sm.ppm");
   
 Here ``import "file name"`` operator creates a string constant which contains
 all the contents of the named file on the computer where we compile the program.
 
-The bmpw.loadFromString() method converts file contents into an internal 
+The ``bmpw.loadFromString()`` method converts file contents into an internal 
 bitmap representation and then garbage collector disposes the string
 which contained file.
 
@@ -115,7 +116,6 @@ signal - wake up one waiting thread.
 .. code:: java
   void wait( var toUnlock : .internal.mutex );
   void twait( var toUnlock : .internal.mutex, var waitTimeMsec : int );
-
   void broadcast();
   void signal();
 
@@ -136,12 +136,34 @@ Mutex synchronization primitive. Take or release mutex.
   ...
 
 
+.internal.directory
+-------------------
+
+Hash map.
+
+.. code:: java
+  int put( var key : .internal.string, var value );
+  .internal.object get( var key );
+  int remove( var key : .internal.string );
+  int size();
+
+
+
+
+
+
+
+
+
 
 
 
 ----------------
 .phantom package
 ----------------
+
+Classes in ``.phantom`` package are not implemented in kernel but 
+nevertheless provide basic OS functions too.
 
 .phantom.application
 --------------------
