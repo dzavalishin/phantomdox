@@ -53,11 +53,11 @@ thin wrap around the CPU providing just some drivers and libraries.
 
 One of things that is quite possible but never even thought about is ability to
 hide from the program fact of stop and start of OS kernel. It is not very hard to
-acheve, and changes situation a lot.
+acheve, and changes situation dramatically.
 
 Having this as a goal one can design a persistent environment, which changes game rules
 quite a lot. But! Program running in a persistent OS can completely ignore the 
-difference between persistent and usual OS environment, not forsing programmer
+difference between persistent and usual OS environment, not forcing programmer
 to learn new tricks.
 
 What is good about persistent environment?

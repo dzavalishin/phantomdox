@@ -163,7 +163,7 @@ Windows
 -------
 
 
-..code:: c
+.. code:: c
 
     #include <video/window.h>
 
@@ -207,7 +207,7 @@ Control is graphical elemen attached to window and processing user input.
 
 Create control:
 
-..code:: c
+.. code:: c
     #include <video/control.h>
 
     control_handle_t w_add_button( window_handle_t w, int id, int x, int y, drv_video_bitmap_t *bmp, drv_video_bitmap_t *pressed, int flags );
@@ -225,7 +225,7 @@ Create control:
 
 Change control state or parameters:
 
-..code:: c
+.. code:: c
 
     //! UTF-8
     void w_control_set_text( window_handle_t w, control_handle_t c, const char *text, color_t text_color );
@@ -243,29 +243,29 @@ Change control state or parameters:
 
 Set callback to be called on major control state change.
 
-..code:: c
+.. code:: c
     void w_control_set_callback( window_handle_t w, control_handle_t c, control_callback_t cb, void *callback_arg );
 
 
 Set control's children - controlled objects. If just window is given, switch its visibility. If window and control - switch control visibility.
 
-..code:: c
+.. code:: c
     void w_control_set_children( window_handle_t w, control_handle_t c, window_handle_t w_child, control_handle_t c_child );
 
 Show bullet with number (``count`` parameter) in top right corner
 
-..code:: c
+.. code:: c
     void w_control_set_notify( window_handle_t w, control_handle_t ch, int count ); 
 
 Set context (right click) menu for the control. Note that it is
 possible to set context menu for a whole window too.
 
-..code:: c
+.. code:: c
     void w_control_set_menu( window_handle_t w, control_handle_t ch, window_handle_t m );
 
 For switch type controls (button, check box, etc) - set or get on/off (pressed/released) state of control.
 
-..code:: c
+.. code:: c
     void w_control_set_state( window_handle_t w, control_handle_t ch, int pressed );
     void w_control_get_state( window_handle_t w, control_handle_t ch, int *ret );
 
@@ -275,7 +275,7 @@ Control scrollbar position and size.
 
 Set value or width to be negative to disable display of bar at all.
 
-..code:: c
+.. code:: c
     void w_control_set_value( window_handle_t w, control_handle_t ch, int value, int width );  //< For scrollbar - set value & bar handle width
     void w_control_get_value( window_handle_t w, control_handle_t ch, int *value, int *width ); //< For scrollbar - get value & bar handle width
 
@@ -314,7 +314,7 @@ Debugging facilities
 Logging
 -------
 
-..code:: c
+.. code:: c
 
   #define DEBUG_MSG_PREFIX "vm.exec"
   #include <debug_ext.h>
@@ -328,7 +328,7 @@ for LOG_FLOW messages to be 10 (messages with levels up to 10 are printed,
 
 Main kernel logging facility has 6 entry points:
 
-..code:: c
+.. code:: c
 
   LOG_FLOW( level, "format", args )
   LOG_ERROR( level, "format", args )
@@ -339,7 +339,7 @@ Main kernel logging facility has 6 entry points:
 
 Additional marcos show message in Phantom's debug window and log it.
 
-..code:: c
+.. code:: c
 
   SHOW_FLOW( level, "format", args )
   SHOW_ERROR( level, "format", args )
@@ -350,7 +350,7 @@ Additional marcos show message in Phantom's debug window and log it.
 
 If there is a message with no args, add 0 to macros name:
 
-..code:: c
+.. code:: c
 
   SHOW_FLOW0( 1, "Driver started" );
 
