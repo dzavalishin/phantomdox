@@ -24,3 +24,5 @@ Introduction and Reference
 .. include:: introduction.rst.inc
 
 .. include:: kernelapi.rst.inc
+
+.. include:: userapi.rst.inc
