@@ -142,8 +142,184 @@ Kernel allocators:
 - Address space allocator
 - P+V allocator
 - Kernel heap
+- Pools
 
-Aside from allocators, but used together is pools subsystem.
+
+Physical memory allocator
+-------------------------
+
+Allocate and free physical computer memory. Allocation unit is page (usually
+4094 bytes). Physical memory is usually quite limited resource, don't waste it.
+
+.. warning::
+  Allocated physical memory is not mapped into the kernel (or any other)
+  address space and can not be accessed just after being allocated. You
+  need to map it to some address in virtual address space, or use for 
+  physical IO. 
+
+.. code:: c
+
+    errno_t hal_alloc_phys_page(physaddr_t *result);
+    void    hal_free_phys_page(physaddr_t page);
+    errno_t hal_alloc_phys_pages(physaddr_t *result, int npages);
+    void    hal_free_phys_pages(physaddr_t page, int npages);
+
+.. note::
+  Before being freed physical memory must be umapped - detouched from address space.
+
+If you need physical memory to be allocated and mapped to some arbitrary
+address, you can use following functions:
+
+.. code:: c
+
+    void hal_pv_alloc( physaddr_t *pa, void **va, int size_bytes );
+    void hal_pv_free( physaddr_t pa, void *va, int size_bytes );
+
+**hal_pv_alloc**
+  Allocate physmem, address space for it, and map. Panics if out of anything.
+  Returns physical address of allocated memory in ``pa``, virtual in
+  ``va``, size is increased to be whole number of pages.
+
+**hal_pv_free**
+  Unmap, free address space and physical memory.
+
+This set of fuctions is good if you need just big amount of kernel memory.
+
+.. warning::
+  If you need buffer to communicate with hardware, do not use these functions.
+  Allocate and map memory manually, you will need special mode of mapping.
+
+Address space allocator
+-----------------------
+
+Allocate address space - page address or set of page addressed. This set of
+calls **does not allocate memory**, just interval of addresses to be mapped to
+some physical memory.
+
+Typical use is to map device memory into the kernel address space.
+
+.. code:: c
+
+    errno_t hal_alloc_vaddress(void **result, int n_pages);
+    void hal_free_vaddress(void *addr, int n_pages);
+
+Mapping and unmapping memory
+----------------------------
+
+This set of fuctions controls relations between physical memory and
+virtual address space. You can call these functions just for address
+space allocated with ``hal_alloc_vaddress``, other parts of address 
+space are conrolled by kernel in a special way.
+
+.. code:: c
+
+    void hal_page_control( physaddr_t pa, void *va, page_mapped_t mapped, page_access_t access );
+    void hal_pages_control( physaddr_t pa, void *va, int n_pages, page_mapped_t mapped, page_access_t access );
+    void hal_page_control_etc(
+         physaddr_t pa, void *va,
+         page_mapped_t mapped, page_access_t access,
+         u_int32_t flags
+        );
+    void hal_pages_control_etc( physaddr_t pa, void *va, int n_pages, page_mapped_t mapped, page_access_t access, u_int32_t flags );
+
+**hal_pages_control_etc**
+  Map or unmap (depending on ``mapped`` parameter value) physical memory
+  at ``pa`` to address space at ``va``.
+
+Possible values for ``mapped`` parameter are:
+- page_unmap: Unmap page(s)
+- page_map: Map page of RAM (cached access)
+- page_map_io: Map page of device memory (non-cached access)
+
+Possible values for ``access`` parameter:
+- page_noaccess: No access (but mapping is set up in pagemap)
+- page_readonly: Read only access.
+- page_readwrite: Read and write access.
+
+.. TODO flags
+
+Kernel heap
+-----------
+
+Not much to say, use classic ``malloc``, ``calloc`` and ``free`` functions
+as usual. Just remember that it is physical, not virtual memory.
+
+Pools
+-----
+
+Aside from allocators, but used together is pools subsystem. Pool is an
+engine which can keep data structures of one type inside. Structures can be 
+accessed by handle. Pool keeps reference count of structure usage and can
+free it on reference count to become zero. Constructor and destructor 
+functions can be registered if needed.
+
+.. code:: c
+
+    #include <kernel/pool.h>
+
+    pool_t *create_pool();
+    errno_t destroy_pool(pool_t *);
+    pool_t *create_pool_ext( int inital_elems, int arena_size );
+
+After creating pool you can set additional properties.
+
+.. code:: c
+
+    pool_t fonts_pool = create_pool();
+
+    fonts_pool->init = font_allocation_func;
+    fonts_pool->destroy = font_release_func;
+
+    fonts_pool->flag_autoclean = 1;
+    fonts_pool->flag_autodestroy = 1;
+    fonts_pool->flag_nofail = 1;
+
+**flag_autoclean**
+  If pool itself is destroyed, destroy all of contents.
+
+**flag_autodestroy**
+  If element reference count becomes zero, destroy element.  
+
+**flag_nofail**
+  If anything goes wrong, call ``panic()``, never return an error.
+  Don't use this mode.
+
+**init**
+  This function is called on element creation. An ``arg`` parameter of
+  ``pool_create_el`` is passed to init, and its result is stored in pool.
+  This function is, usually, allocates memory and sets up initial values
+  for element.
+
+**destroy**
+  Called on element destruction. Usually releases related (referenced by
+  pool element) resources and deallocates element's memory.
+
+.. code:: c
+
+    pool_handle_t pool_create_el( pool_t *pool, void *arg );
+    void *pool_get_el( pool_t *pool, pool_handle_t handle );
+    errno_t pool_release_el( pool_t *pool, pool_handle_t handle );
+    errno_t pool_destroy_el( pool_t *pool, pool_handle_t handle );
+
+**pool_create_el**
+  Create new element in pool. An ``arg`` is poiner to structure to
+  be placed in pool as is, or, if ``init`` (constructor) function
+  is set for pool, an argument for that function. Reference count for
+  new element is 1. Element handle is returned, or ``INVALID_POOL_HANDLE``
+  in case of error.
+
+**pool_destroy_el**
+  Destroy pool element with given handle, even if reference count
+  for it is not zero.
+
+**pool_get_el**
+  Get pointer to pool element for given handle, increase reference count.
+
+**pool_release_el**
+  Tell pool that we do not use poiner to element any more. Decrease element
+  count. Element can be destroyed if count becomes zero.
+
+.. TODO need example
 
 ---------------
 Time and timers
