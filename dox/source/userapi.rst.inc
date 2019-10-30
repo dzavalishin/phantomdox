@@ -163,6 +163,210 @@ represent numeric types.
 
 The only notable method now is ``toString()``.
 
+.internal.io
+------------
+
+Represents file/device access.
+
+.. code:: java
+
+    void    open( var filename : string );
+    void	close();
+    void	read( var nBytes : int );
+    void    write( var data : string );
+    void    seek( var pos: int, var whence: int );
+    // ioctl
+    void	setAttribute( var name : string, var value : string );
+    string	getAttribute( var name : string );
+
+
+
+.internal.stat
+--------------
+
+Access kernel statistics. ``getStat()`` returns statistics information,
+first arg is counter number and second is kind of statistics counter.
+
+Corresponding conunter number values can be found in ``<kernel/stats.h>``. There are no 
+Phantom language defines yet, sorry. 
+
+Kind vaues are:
+
+- 0: Current (instant) counter value
+- 1: Average value
+- 2: Value for this kernel boot
+- 3: Value for previous boot 
+- 4: Value for the whole history of this OS instance
+
+.. code:: java
+    class .internal.stat
+    {
+        int getStat( var nCounter : int, var kind : int );
+        int getIdle();
+    };
+
+.internal.tcp
+-------------
+
+This class will provide access to TCP protocol.
+Currently it can be used to execute HTTP connection and get a result.
+
+.. code:: java
+    class .internal.tcp
+    {
+        // Call URL and return http server reply
+        .internal.string curl( var host : .internal.string, var headers : .internal.string ) [24] {  }
+    };
+
+
+.internal.thread
+----------------
+
+Internal representation of thread. User code is not supposed to
+create objects of this type. It is possible but meaningless. Though
+it is possible to access such an object for own (current) thread.
+
+.. code:: java
+    class .internal.thread
+    {
+        .internal.string toString();
+
+        /**
+         *
+         * Return (possibly specific for this thread) OS
+         * interface object, wchich is used to access public
+         * OS services.
+         *
+         * @See .phantom.osimpl
+         *
+        **/
+        .phantom.osimpl getOsInterface();
+
+        /**
+         *
+         * Return owner of this thread. For the root OS
+         * threads this can be null.
+         *
+        **/
+        .phantom.user getUser();
+
+        /**
+         *
+         * Return this thread's environment (Unix-style).
+         *
+        **/
+        .phantom.environment getEnvironment();
+    };
+
+
+.internal.time
+--------------
+
+Time related kernel services.
+
+.. code:: java
+    class .internal.time
+    {
+        // classic Unix 32 bit time. TODO make it to be 64?
+        .internal.int unixTime();
+
+        void sleepSec( var timeSec : int );
+        void sleepMsec( var timeMsec : int );
+
+        // void runLater( var start : .phantom.runnable, var timeMsec : int );
+    };
+
+
+.internal.udp
+-------------
+
+UDP protocol. Port numbers and IP addresses are in host byte order (usual integers).
+
+.. code:: java
+    class .internal.udp
+    {
+        // Set local port number
+        .internal.string bind( var port : .internal.int );
+
+        .internal.string recvFrom( var addr : .internal.int, var port : .internal.int );
+        .internal.int sendTo( var data : .internal.string, var addr : .internal.int, var port : .internal.int );
+    };
+
+
+.internal.window
+----------------
+
+Access GUI subsystem.
+
+.. code:: java
+    class window
+    {
+        int     getXSize();
+        int     getYSize();
+
+        int     getX();
+        int     getY(); // Get window position on screen
+
+        void    update(); // Bring window image to screen
+
+        // Update window after each paint - flickers a bit. 
+        // Enabled by default. Turn off and update manually.
+        void    setAutoUpdate( var auto : int );
+
+        void    clear();
+        void    fill(var fg : int);
+
+        void    setBg( var bg : int ); // background color
+        void    setFg( var fg : int ); // foreground color
+
+        void    drawString( var x : int, var y : int, var s : string );
+        void    drawImage( var x : int, var y : int, var img : .internal.object ); // param is bitmap
+
+        // You can put bitmap with basic drawImage and redraw part with this call
+        void    drawImagePart( var x : int, var y : int, var img : .internal.object, var xstart : int, var ystart : int, var xsize : int, var ysize : int ); // param is bitmap
+
+        //void    setWinSize( var xsize : int, var ysize : int );
+        void    setWinPosition( var x : int, var y : int );
+
+        void    drawLine( var x : int, var y : int, var xsize : int, var ysize : int );
+        void    drawBox( var x : int, var y : int, var xsize : int, var ysize : int );
+
+        void    fillBox( var x : int, var y : int, var xsize : int, var ysize : int );
+        void    fillEllipse( var x : int, var y : int, var xsize : int, var ysize : int );
+
+        //void    setEventHandler( var handler : .ru.dz.phantom.handler );
+        void    setTitle( var title : string );
+
+        // errno
+        int     scrollHor( var x : int, var y : int, var xsize : int, var ysize : int, var steps : int );
+    };
+
+
+
+.internal.world
+---------------
+
+Access misc OS services which can't be accessed through ``.internal`` classes.
+
+.. code:: java
+    class .internal.world
+    {
+        .internal.thread getMyThread();
+
+        // returns errno
+        int startThread( var entry : .phantom.runnable, var arg : .internal.object );
+
+        // Print to system logging facility - practically it is a 
+        // log window in real OS and stdout in pvm_*.exe
+        void log( var msg : .internal.string );
+    };
+
+
+
+
+
+
+
 
 
 
@@ -214,6 +418,30 @@ are application instances - documents, for example.
 
 Abstract base class for various callbacks and code that can be
 run in a thread.
+
+.. code:: java
+    class runnable
+    {
+        // They call us here
+        void run( var arg @const ) [8]
+        {
+            throw "Abstract runnable started";
+        }
+    };
+
+
+.phantom.environment
+--------------------
+
+Similar to Uinx process environment - ``key=value`` settings storage.
+Currently not really used.
+
+.. code:: java
+    class environment
+    {
+        int set( var key: .internal.string, var val  : .internal.object );
+        .internal.object get(var key: .internal.string );
+    };
 
 
 
