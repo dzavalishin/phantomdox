@@ -45,12 +45,14 @@ The next method parses JSON and returns tree of
 correspondinf arrays/directories/leaf objects.
 
 .. code:: java
+
     .internal.object parseJson();
 
 This method returns not char, but byte at given position
 and will be renamed accordingly.
 
 .. code:: java
+
     int charAt( var index : int );
 
 .internal.binary
@@ -59,6 +61,7 @@ and will be renamed accordingly.
 Binary data buffer.
 
 .. code:: java
+
     int  getByte( var index : int );
     void setByte( var index : int, var value : int );
     void setRange( var from : .internal.binary, var toPos : int, var fromPos : int, var ln : int );
@@ -171,13 +174,13 @@ Represents file/device access.
 .. code:: java
 
     void    open( var filename : string );
-    void	close();
-    void	read( var nBytes : int );
+    void    close();
+    void    read( var nBytes : int );
     void    write( var data : string );
     void    seek( var pos: int, var whence: int );
     // ioctl
-    void	setAttribute( var name : string, var value : string );
-    string	getAttribute( var name : string );
+    void    setAttribute( var name : string, var value : string );
+    string  getAttribute( var name : string );
 
 
 
@@ -185,20 +188,24 @@ Represents file/device access.
 --------------
 
 Access kernel statistics. ``getStat()`` returns statistics information,
-first arg is counter number and second is kind of statistics counter.
+first arg is counter number and second is kind of statistics counter value.
 
 Corresponding conunter number values can be found in ``<kernel/stats.h>``. There are no 
 Phantom language defines yet, sorry. 
 
-Kind vaues are:
+Kind values are:
 
-- 0: Current (instant) counter value
-- 1: Average value
+- 0: Current counter value
+- 1: Average value per second
 - 2: Value for this kernel boot
 - 3: Value for previous boot 
 - 4: Value for the whole history of this OS instance
 
+Note that 4-th kind, among others, lets you find out number of
+reboots done and snapshots made.
+
 .. code:: java
+
     class .internal.stat
     {
         int getStat( var nCounter : int, var kind : int );
@@ -212,6 +219,7 @@ This class will provide access to TCP protocol.
 Currently it can be used to execute HTTP connection and get a result.
 
 .. code:: java
+
     class .internal.tcp
     {
         // Call URL and return http server reply
@@ -227,6 +235,7 @@ create objects of this type. It is possible but meaningless. Though
 it is possible to access such an object for own (current) thread.
 
 .. code:: java
+
     class .internal.thread
     {
         .internal.string toString();
@@ -265,6 +274,7 @@ it is possible to access such an object for own (current) thread.
 Time related kernel services.
 
 .. code:: java
+
     class .internal.time
     {
         // classic Unix 32 bit time. TODO make it to be 64?
@@ -283,6 +293,7 @@ Time related kernel services.
 UDP protocol. Port numbers and IP addresses are in host byte order (usual integers).
 
 .. code:: java
+
     class .internal.udp
     {
         // Set local port number
@@ -299,6 +310,7 @@ UDP protocol. Port numbers and IP addresses are in host byte order (usual intege
 Access GUI subsystem.
 
 .. code:: java
+
     class window
     {
         int     getXSize();
@@ -349,6 +361,7 @@ Access GUI subsystem.
 Access misc OS services which can't be accessed through ``.internal`` classes.
 
 .. code:: java
+
     class .internal.world
     {
         .internal.thread getMyThread();
@@ -420,6 +433,7 @@ Abstract base class for various callbacks and code that can be
 run in a thread.
 
 .. code:: java
+
     class runnable
     {
         // They call us here
@@ -437,6 +451,7 @@ Similar to Uinx process environment - ``key=value`` settings storage.
 Currently not really used.
 
 .. code:: java
+
     class environment
     {
         int set( var key: .internal.string, var val  : .internal.object );
