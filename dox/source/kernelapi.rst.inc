@@ -702,11 +702,57 @@ Classic thread pool subsystem - can not be triggered from interrupt.
 Disk IO
 -------
 
+Low lwvwl disk IO subsystem is targeted mostly to support paging 
+function as main Phantom IO subsystem is persistent memory.
+
 IO Request
 ----------
 
+.. code:: c
+
+    #include <pager_io_req.h>
+
+    typedef struct pager_io_request
+    {
+        physaddr_t     phys_page;        	// physmem address
+        disk_page_no_t disk_page;        	// disk address in pages - as pager requested (ignored by io code)
+
+        unsigned char  flag_pagein;            // Read
+        unsigned char  flag_pageout;           // Write
+
+        void           (*pager_callback)( 
+            struct pager_io_request *req, int write );
+
+        errno_t        rc; 
+
+        // Other fields are private
+
+    } pager_io_request;
+
+**phys_page**
+  Physical memory address for IO.
+
+**disk_page**
+  Disk page address for IO. In 4K pages.  
+
+**flag_pagein**
+  If not zero - perform read.
+
+**flag_pageout**
+  If not zero - perform write.
+
+**pager_callback**
+  If not zero - call when request is done or failed.
+
+**rc**
+  Result code. Zero on success.
+
 Syncronous disk IO
 ------------------
+
+Disk registration
+-----------------
+
 
 Parttitions
 -----------
