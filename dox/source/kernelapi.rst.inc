@@ -167,7 +167,7 @@ Allocate and free physical computer memory. Allocation unit is page (usually
 .. note::
   Before being freed physical memory must be umapped - detouched from address space.
 
-If you need physical memory to be allocated and mapped to some arbitrary
+If you need physical memory to be allocated and mapped to some
 address, you can use following functions:
 
 .. code:: c
@@ -176,8 +176,9 @@ address, you can use following functions:
     void hal_pv_free( physaddr_t pa, void *va, int size_bytes );
 
 **hal_pv_alloc**
-  Allocate physmem, address space for it, and map. Panics if out of anything.
-  Returns physical address of allocated memory in ``pa``, virtual in
+  Allocate physmem, allocate address space for it, and map memory to that address space.
+  Panics if out of anything.
+  Returns physical address of allocated memory in ``pa``, virtual address in
   ``va``, size is increased to be whole number of pages.
 
 **hal_pv_free**
@@ -187,12 +188,12 @@ This set of fuctions is good if you need just big amount of kernel memory.
 
 .. warning::
   If you need buffer to communicate with hardware, do not use these functions.
-  Allocate and map memory manually, you will need special mode of mapping.
+  Allocate and map memory manually, beacuse you will need special mode of mapping.
 
 Address space allocator
 -----------------------
 
-Allocate address space - page address or set of page addressed. This set of
+Allocate address space - page address or set of page addresses. This set of
 calls **does not allocate memory**, just interval of addresses to be mapped to
 some physical memory.
 
@@ -238,17 +239,33 @@ Possible values for ``access`` parameter:
 
 .. TODO flags
 
+Physical memory access
+----------------------
+
+Sometimes it is needed to copy data to or from physical memory.
+Set of fuctions helps to do it easily.
+
+.. code:: c
+
+    void hal_copy_page_v2p( physaddr_t to, void *from );
+    void memcpy_p2v( void *to, physaddr_t from, size_t size );
+    void memcpy_v2p( physaddr_t to, void *from, size_t size );
+    void memzero_page_v2p( physaddr_t to );
+
+
 Kernel heap
 -----------
 
 Not much to say, use classic ``malloc``, ``calloc`` and ``free`` functions
-as usual. Just remember that it is physical, not virtual memory.
+as usual. Note that size of heap is fixed and you can easily run out of it.
+Use ``hal_pv_alloc`` if you need a lot of memory.
 
 Pools
 -----
 
 Aside from allocators, but used together is pools subsystem. Pool is an
-engine which can keep data structures of one type inside. Structures can be 
+engine which can keep data structures (referred as *elements*) of one type inside. 
+Structures can be 
 accessed by handle. Pool keeps reference count of structure usage and can
 free it on reference count to become zero. Constructor and destructor 
 functions can be registered if needed.
@@ -260,6 +277,8 @@ functions can be registered if needed.
     pool_t *create_pool();
     errno_t destroy_pool(pool_t *);
     pool_t *create_pool_ext( int inital_elems, int arena_size );
+
+.. TODO create_pool_ext
 
 After creating pool you can set additional properties.
 
@@ -321,13 +340,123 @@ After creating pool you can set additional properties.
 
 .. TODO need example
 
+
+----------
+Interrupts
+----------
+
+Hardware interrupts
+-------------------
+
+.. code:: c
+
+    errno_t hal_irq_alloc( int irq, void (*func)(void *arg), void *arg, int is_shareable );
+    void hal_irq_free( int irq, void (*func)(void *arg), void *arg );
+
+**hal_irq_alloc**
+  Set interrupt handler.
+
+Software interrupts
+-------------------
+
+Software interrupts are called from hardware interrupt handler after all 
+hardware interrupts are handled and interrupt state is left. Main use is
+thread preemption.
+
+.. code:: c
+
+    void hal_request_softirq( int sirq );
+    void hal_set_softirq_handler( int sirq, void (*func)(void *), void *_arg );
+
+    int hal_alloc_softirq(void); // Return next unused softirq number
+
+    void hal_enable_softirq(void);
+    void hal_disable_softirq(void);
+
+
+
 ---------------
 Time and timers
 ---------------
 
+Sleep functions
+---------------
+
+.. code:: c
+
+    void hal_sleep_msec( int miliseconds );
+    void phantom_spinwait_msec( int miliseconds );
+    void tenmicrosec(void);
+
+**hal_sleep_msec**
+  Sleep for given time by switching current thread off the CPU.
+  It does not guarantee that exact time will pass, for it can take 
+  some more time to return thread to CPU.
+
+**phantom_spinwait_msec**
+  Sleep by spinning - does not switch threads. You should be disabling
+  interrupts for CPU not to be stolen by timer interrupt. Do not use if
+  possible.
+
+**tenmicrosec**
+  Spin for ~10uSec. Also - disable interrupts.
+
+.. note::
+  It is forbidden for a kernel code to sleep or wait
+  for a long time keeping access to a persistent
+  virtual memory.
+
+
+Polled timeouts
+---------------
+
+These functions can be used to check if given time is passed.
+
+.. code:: c
+
+    typedef bigtime_t polled_timeout_t;
+
+    void set_polled_timeout( polled_timeout_t *timer, bigtime_t timeout_uSec );
+    bool check_polled_timeout( polled_timeout_t *timer );
+
+**set_polled_timeout**
+  Set up a timeout.
+
+**check_polled_timeout**
+  Check if requested time is passed.
+
+.. code:: c
+
+    polled_timeout_t tmo;
+    // start IO
+    set_polled_timeout( &tmo, CONST_IO_TIME*2 );
+    // Do something
+    if( check_polled_timeout( &tmo ) ) return -1; // Failed
+
 Main system timer
 -----------------
 
+.. code:: c
+
+    #include <time.h>
+
+    bigtime_t 		hal_system_time(void); // uptime
+    bigtime_t 		hal_local_time(void);  // real time/date
+
+    time_t 			time(time_t *timer);
+    void 			set_time(time_t time);
+
+    // Fast, but less accurate time, sec
+    time_t          fast_time(void);
+
+    // Uptime in seconds
+    time_t          uptime(void);
+
+**bigtime_t**
+  Time in microseconds.
+
+**time_t**
+  Traditional Unix time in seconds.
 
 Time of day
 -----------
@@ -335,11 +464,81 @@ Time of day
 Time of day subsystem keeps track of current time and
 date.
 
+.. code:: c
+
+    time_t mktime(struct tm *);
+    size_t strftime(char * , size_t, const char * , const struct tm * );
+    char *ctime_r(const time_t *, char *);
+    struct tm *gmtime_r(const time_t *, struct tm *);
+    struct tm *localtime_rb(bigtime_t timer, struct tm *tmb);
+
+
+.. TODO describe
+
+
 In-interrupt timer calls
 ------------------------
 
 It is possible to call some callback after a given time
 right from a timer interrupt. Should be used very carefuly.
+
+.. code:: c
+
+    #include <kernel/timedcall.h>
+
+    typedef void (*timedcall_func_t)( void * );
+
+    typedef struct timedcall
+    {
+        timedcall_func_t 	f;
+        void                *arg;
+        long                msecLater;
+
+    // Event execution will be postponed while this spinlock is locked
+    // TIMEDCALL_FLAG_CHECKLOCK flag must be set
+        hal_spinlock_t	*lockp;
+
+        // Private filds follow
+
+    } timedcall_t;
+
+**f**
+  Function to be called by timer.
+
+**arg**
+  Parameter to pass to ``f``.
+
+**msecLater**
+  Time to pass before ``f`` is called.
+
+.. code:: c
+
+    #define TIMEDCALL_FLAG_PERIODIC         (1 << 0)
+    #define TIMEDCALL_FLAG_CHECKLOCK        (1 << 2)
+
+    void phantom_request_timed_call( timedcall_t *entry, u_int32_t flags );
+    void phantom_undo_timed_call(timedcall_t *entry);
+
+**phantom_request_timed_call**
+  Request call of function after given time is passed. All the
+  parameters are to be set up in ``timedcall_t`` structure.
+
+**phantom_undo_timed_call**
+  Un-request previously requested timed call. Note that just when
+  this function is called timed call may start to execute. So call
+  to it does not guarantee that call did not happen. See
+  ``TIMEDCALL_FLAG_CHECKLOCK`` for interlocking.
+
+**TIMEDCALL_FLAG_PERIODIC**
+  Execute timed call periodically.
+
+**TIMEDCALL_FLAG_CHECKLOCK**
+  If this flag is given, timed call won't happen as long as
+  spinlock given in ``lockp`` field is locked. This way you 
+  can guarantee that timed call is not performed when it is
+  not needed anymore and you are going to disable it with 
+  ``phantom_undo_timed_call``.
+
 
 In-thread timer calls
 ---------------------
@@ -349,20 +548,20 @@ context to be done after a given time. Such a callback
 should not take long for it will prevent other callbacks
 to be executed.
 
-Thread sleep
-------------
+.. code:: c
 
-It is more or less ok for a kernel thread to sleep for
-some time.
+    #include <kernel/net_timer.h>
 
-Relations with snapshots subsystem
-----------------------------------
+    int set_net_timer(net_timer_event *e, unsigned int delay_ms, 
+        net_timer_callback callback, void *args, int flags);
+    int cancel_net_timer(net_timer_event *e);
 
-It is forbidden for a kernel code to sleep or wait
-for a long time keeping access to a persistent
-virtual memory.
+**set_net_timer**
+  Request call to ``callback`` after ``delay_ms``.
 
-
+**cancel_net_timer**
+  Cancel request. Request still can be fired even after call to
+  this function. 
 
 -----------------
 DPC: Thread pools
