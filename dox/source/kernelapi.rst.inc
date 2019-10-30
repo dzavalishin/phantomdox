@@ -406,6 +406,7 @@ Sleep functions
   for a long time keeping access to a persistent
   virtual memory.
 
+.. TODO ref to pers mem lock/unlock
 
 Polled timeouts
 ---------------
@@ -440,17 +441,17 @@ Main system timer
 
     #include <time.h>
 
-    bigtime_t 		hal_system_time(void); // uptime
-    bigtime_t 		hal_local_time(void);  // real time/date
+    bigtime_t hal_system_time(void); // uptime
+    bigtime_t hal_local_time(void);  // real time/date
 
-    time_t 			time(time_t *timer);
-    void 			set_time(time_t time);
+    time_t    time(time_t *timer);
+    void      set_time(time_t time);
 
     // Fast, but less accurate time, sec
-    time_t          fast_time(void);
+    time_t    fast_time(void);
 
     // Uptime in seconds
-    time_t          uptime(void);
+    time_t    uptime(void);
 
 **bigtime_t**
   Time in microseconds.
@@ -494,9 +495,7 @@ right from a timer interrupt. Should be used very carefuly.
         void                *arg;
         long                msecLater;
 
-    // Event execution will be postponed while this spinlock is locked
-    // TIMEDCALL_FLAG_CHECKLOCK flag must be set
-        hal_spinlock_t	*lockp;
+        hal_spinlock_t *    lockp;
 
         // Private filds follow
 
@@ -563,9 +562,141 @@ to be executed.
   Cancel request. Request still can be fired even after call to
   this function. 
 
+-------
+Threads
+-------
+
+Phantom kernel supports kernel multithreading and quite
+powerful multitasking features in general.
+
+.. code:: c
+
+    #include <threads.h>
+
+    typedef struct phantom_thread phantom_thread_t;
+
+    tid_t   hal_start_thread(void (*thread)(void *arg), void *arg, int flags);
+    errno_t t_kill_thread( tid_t tid );
+
+Thread properties
 -----------------
+
+.. code:: c
+
+    tid_t   get_current_tid(void);
+
+    errno_t t_set_owner( tid_t tid, void *owner );
+    errno_t t_get_owner( tid_t tid, void **owner );
+
+    errno_t t_new_ctty( tid_t tid );
+    errno_t t_get_ctty( tid_t tid, struct wtty ** );
+
+    errno_t t_set_pid( tid_t tid, pid_t pid );
+    errno_t t_get_pid( tid_t tid, pid_t *pid );
+
+    errno_t t_set_priority( tid_t tid, int prio );
+    errno_t t_get_priority( tid_t tid, int *prio );
+
+    errno_t t_add_flags( tid_t tid, u_int32_t set_flags );
+    errno_t t_remove_flags( tid_t tid, u_int32_t reset_flags );
+    errno_t t_get_flags( tid_t tid, u_int32_t *flags );
+
+**t_set_owner**
+  Is not interpreted by threads engine, used to connect low level
+  thread to bytecode virtual machine threads.
+
+**t_new_ctty**
+  Detouch thread's controlling terminal from parent thread's tty.
+  It is up to the caller to connect controlling terminal somewhere.
+
+**t_set_pid**
+  Used by POSIX subsystem only. Native Phantom code does not use
+  concept of processes.
+
+Thread priorities from 1 to 0xF are normal timesharing priorities.
+Priority of 0 is idle time execution only. If prio is above
+``THREAD_PRIO_MOD_REALTIME`` (0x10 to 0x1F) - thread is real time,
+and will take all CPU preventing any lower prio threads to run.
+Use with big care.
+
+Following functions control current thread only.
+
+.. code:: c
+
+    errno_t         t_current_set_priority( int prio );
+    errno_t         t_current_get_priority( int *prio);
+
+    errno_t         t_current_set_name(const char *name);
+
+    errno_t         t_current_set_death_handler(void (*handler)( phantom_thread_t * ));
+
+Thread flags:
+
+- THREAD_FLAG_USER: Runs in user mode. Not implemented.
+- THREAD_FLAG_VM: Runs bytecode virtual machine thread, owner points to VM thread object.
+- THREAD_FLAG_JIT: JITted VM tread - not imlpemented
+- THREAD_FLAG_TIMEDOUT: Cond (or something else) was timed out.
+- THREAD_FLAG_UNDEAD: This thread can't be killed for some reason. Usually it's some special one like CPU idle thread.
+- THREAD_FLAG_NOSCHEDULE: Must not be selected by scheduler in usual way - per CPU 'parking' (idlest) thread
+- THREAD_FLAG_SNAPPER: I am a snapper thread.
+- THREAD_FLAG_HAS_PORT: This thread (possibly) owns port (see newos/ports)
+
+The only flag that can be set with t_add_flags/t_remove_flags is 
+``THREAD_FLAG_HAS_PORT``.
+
+
+
 DPC: Thread pools
 -----------------
+
+DPC (Deferred Procedure Call) requests are supposed to be used in interrupts 
+handlers to offload long part of interrpt processing to thread and not to 
+keep seprate thread for every function of every driver.
+
+DPC subsystem keeps pool of threads used to handle requests, and adds threads
+to pool if all of existing threads are used.
+
+.. code:: c
+
+    #include <kernel/dpc.h>
+
+    void dpc_request_init(dpc_request *rq, void (*_func)(void *));
+    void dpc_request_trigger(dpc_request *me, void *_arg);
+
+DPC can be triggered from interrupt and does not require any 
+memory allocation or other resources at trigger point.
+
+Example code:
+
+.. code:: c
+
+    dpc_request drq;
+
+    static void driver_init( void )
+    {
+        dpc_request_init( &drq, &dpc_handler );
+    }
+
+    static void dpc_handler( void *arg )
+    {
+        // Read data from device
+    }
+
+    static void interrupt_handler( void *arg )
+    {
+        if( read_request )
+            dpc_request_trigger( &drq, 0 );
+    }
+
+Classic thread pool subsystem - can not be triggered from interrupt.
+
+.. code:: c
+
+    typedef void (*runnable_t)( void *arg );
+    void run_in_thread_pool( runnable_t func, void *arg );
+
+**run_in_thread_pool**
+  Requests ``func`` to be started with ``arg`` in separate thread.
 
 -------
 Disk IO
