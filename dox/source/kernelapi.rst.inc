@@ -15,6 +15,123 @@ Sync primitives:
 - Cond
 - Semaphore
 
+Spinlocks
+---------
+
+
+.. code:: c
+
+    #include <spinlock.h>
+
+    void	hal_spin_init(hal_spinlock_t *sl);
+    void	hal_spin_lock(hal_spinlock_t *sl);
+    void	hal_spin_unlock(hal_spinlock_t *sl);
+
+Spinlock must be taken with interrupts disabled and for very short time, like
+few code lines. Special version of spinlock functions disables and restores
+interrupts.
+
+.. code:: c
+
+    void    hal_spin_lock_cli(hal_spinlock_t *sl);
+    void    hal_spin_unlock_sti(hal_spinlock_t *sl);
+
+Spinlock can not be placed in paged/persistent memory, because it is
+forbidden to switch thread context with spinlock locked. If you absolutely
+have to place spinlock into a persistent memory object, use these functions:
+
+.. code:: c
+
+    // Turns off interrupts too
+    void    hal_wired_spin_lock(hal_spinlock_t *l);
+    void    hal_wired_spin_unlock(hal_spinlock_t *l);
+
+Note that they wire (prevent pageout) memory page(s) spinlock resides in.
+It means that locking such a spinlock can cause pagein, which is disk IO
+and can take unexpectedly long time.
+
+Note that there is a special ``pvm_spinlock``, which is quite a different kind
+of spinlock and is dedicated to use with bytecode virtual machine.
+
+.. TODO describe it here?
+
+
+Mutex
+-----
+
+.. code:: c
+
+    #include <kernel/mutex.h>
+
+    errno_t hal_mutex_init(hal_mutex_t *m, const char *name);
+    errno_t hal_mutex_lock(hal_mutex_t *m);
+    errno_t hal_mutex_unlock(hal_mutex_t *m);
+    errno_t hal_mutex_destroy(hal_mutex_t *m);
+    int     hal_mutex_is_locked(hal_mutex_t *m);
+
+    #define ASSERT_LOCKED_MUTEX(m) assert(hal_mutex_is_locked(m))
+
+.. important::
+    Be careful using ``hal_mutex_is_locked()``.
+    Races possible - mutex can get locked by other thread just after return.
+    The only safe use is for ASSERT_LOCKED_MUTEX.
+
+
+
+Cond
+----
+
+.. code:: c
+
+    #include <kernel/cond.h>
+
+    errno_t hal_cond_init( hal_cond_t *c, const char *name );
+    errno_t hal_cond_wait( hal_cond_t *c, hal_mutex_t *m );
+    errno_t hal_cond_timedwait( hal_cond_t *c, hal_mutex_t *m, long msecTimeout );
+    errno_t hal_cond_signal( hal_cond_t *c );
+    errno_t hal_cond_broadcast( hal_cond_t *c );
+    errno_t hal_cond_destroy( hal_cond_t *c );
+
+Semaphore
+---------
+
+.. index:: single: sem
+.. index:: single: semaphore
+
+The main reason for semaphores to exist when we have mutex/cond is that 
+semaphore can be signalled (released) from interrupt and if you release it
+before waitng thread will wait (attempt to acquire) for it, it will not be
+put asleep. 
+
+.. TODO need code example
+
+.. code:: c
+
+    int     hal_sem_init( hal_sem_t *s, const char *name );
+    void    hal_sem_release( hal_sem_t *s );
+    int     hal_sem_acquire( hal_sem_t *s );
+    errno_t sem_get_count(hal_sem_t *s, int *count);
+    void    hal_sem_destroy( hal_sem_t *s );
+    errno_t hal_sem_zero( hal_sem_t *s );
+
+**hal_sem_acquire**
+  Attempt to acquire a semaphore. Try to decrement semaphore
+  value. If it becomes less than zero - sleep until semaphore is
+  released (incremented) enough times for it to be decremented to zero.
+
+**hal_sem_release**
+  Increment semaphore value. If some thread attempted to acquire and
+  sleeping in that state waiting for semaphore to become positive,
+  wake up that thread.
+
+**sem_get_count**
+  Return current semaphore count.
+
+**hal_sem_zero**
+  Set semaphore to zero. Next hal_sem_acquire will sleep waiting for
+  someone to release.
+
+
 --------------------
 Allocators and Pools
 --------------------

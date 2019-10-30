@@ -138,7 +138,7 @@ Mutex synchronization primitive. Take or release mutex.
 
     ...
     mtx.lock();
-    update complex state
+    // update complex state
     mtx.unlock();
     ...
 
