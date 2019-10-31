@@ -1452,6 +1452,8 @@ Control is graphical elemen attached to window and processing user input.
 
 Create control:
 
+.. TODO pictures
+
 .. code:: c
 
     #include <video/control.h>
@@ -1507,7 +1509,7 @@ Following flags are defined:
   Callback function will be called on mouse over the control.
   
 **CONTROL_FLAG_CALLBACK_KEY**
-  Call callback on any key press. If no this flag, callback is just
+  Call callback on any key press. If this flag is not set, callback is just
   called for enter in text entry field or key that changes on/off state
   for buttons and similar controls.
 
@@ -1589,7 +1591,135 @@ Set value or width to be negative to disable display of bar at all.
 Fonts
 -----
 
-----------------
+Phantom graphics subsystem supports bitmap and TrueType fonts.
+
+Preinstalled set of bitmap fonts:
+
+drv_video_16x16_font, drv_video_8x16ant_font, drv_video_8x16bro_font,
+drv_video_8x16cou_font, drv_video_8x16med_font, drv_video_8x16rom_font,
+drv_video_8x16san_font, drv_video_8x16scr_font, drv_video_kolibri1_font,
+drv_video_kolibri2_font, drv_video_gallant12x22_font, drv_video_freebsd_font.
+
+Window functions to work with bitmap fonts:
+
+.. code:: c
+
+    void w_font_draw_string(
+        window_handle_t win,
+        const drv_video_font_t *font,
+        const char *s, 
+        const rgba_t color,
+        const rgba_t bg,
+        int x, int y );
+
+    void w_font_scroll_line(
+        window_handle_t win,
+        const drv_video_font_t *font, rgba_t color );
+
+    void w_font_tty_string(
+        drv_video_window_t *win,
+        const struct drv_video_font_t *font,
+        const char *s,
+        const rgba_t fg_color,
+        const rgba_t bg_color,
+        int *x, int *y );
+
+**w_font_draw_string**
+  Paint string with given font.
+
+**w_font_scroll_line**
+  Scroll window one line up using given font height.  
+
+**w_font_tty_string**
+  Piant string processing TTY control chars:
+  \\n, \\r, some of ANSI control sequences (text color).
+  Update given coordinates.
+
+Truetype fonts support lets caller choose font style and size and provides
+painting and size request functions.
+
+Access font:
+
+.. code:: c
+
+    font_handle_t w_get_system_font_ext( int font_size );
+    font_handle_t w_get_system_font( void );
+
+    font_handle_t w_get_system_mono_font_ext( int font_size );
+    font_handle_t w_get_system_mono_font( void );
+
+    font_handle_t w_get_tt_font_file( const char *file_name, int size );
+    font_handle_t w_get_tt_font_mem( void *mem_font, size_t mem_font_size, const char* diag_font_name, int font_size );
+
+    errno_t w_release_tt_font( font_handle_t font );
+
+
+**w_get_system_font_ext**
+  Get handle of default system font for given font size.
+
+**w_get_system_mono_font_ext**
+  Get handle of default monospaced (tty style) font for given size.
+
+**w_get_tt_font_file**
+  Load font from file - requires some filesystem to be running.
+
+**w_get_tt_font_mem**
+  Load font from memory - usually from persistent binary object.
+
+**w_release_tt_font**
+  Release font when it is not needed any more.
+
+
+Use font:
+
+.. code:: c
+
+    void w_ttfont_draw_string(
+        window_handle_t win,
+        font_handle_t font,
+        const char *s, const rgba_t color,
+        int x, int y );
+
+    void w_ttfont_draw_string_ext(
+        window_handle_t win,
+        font_handle_t font,
+        const char *str, size_t strLen,
+        const rgba_t color,
+        int win_x, int win_y,
+        int *find_x, int find_for_char );
+
+
+    void w_ttfont_draw_char(
+        window_handle_t win,
+        font_handle_t font,
+        const char *str, const rgba_t color,
+        int win_x, int win_y );
+
+    void w_ttfont_string_size( font_handle_t font,
+        const char *str, size_t strLen,
+        rect_t *r );
+
+**w_ttfont_draw_string**
+  Paint string with given ttf font.
+
+**w_ttfont_draw_string_ext**
+  Extended string paint version. Returns X coordinte of 
+  ``find_for_char`` character in ``find_x`` variable.
+  This feature is good for painting cursor line.
+
+**w_ttfont_draw_char**
+  Paint one character with TrueType font.
+
+.. note::
+  It is not a good idea to paint text character by charcter, for
+  kerning is not processed if you do it this way.
+
+**w_ttfont_string_size**
+  Calculate bounding rectangle for string.
+
+
+
+
 UTF-8 and UTF-32
 ----------------
 
