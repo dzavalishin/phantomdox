@@ -854,7 +854,7 @@ Now some explanation.
   will be recognized as Phantom OS disk, some kind of file system (FAT32 is the
   only one that is supported), or not recognized at all.
 
-Parttitions
+Partitions
 -----------
 
 The only type of partitioning supported in current kernel is traditional 
@@ -870,7 +870,118 @@ so that it needs no access to file systems. But it
 is unrealistic yet and not reasonable to live completely 
 without traditional FS access.
 
+Connecting FS driver
+--------------------
 
+Here is an example of how to connect a file system to kernel.
+
+FS probe entry point is called for each whole disk or partition and
+for each registered FS:
+
+.. code:: c
+
+    errno_t fs_probe_fat(phantom_disk_partition_t *p )
+    {
+        unsigned char buf[PAGE_SIZE];
+
+        SHOW_FLOW( 1, "%s look for FAT", p->name );
+
+        switch( p->type )
+        {
+            case 1: // FAT 12
+            case 4: // FAT 16 below 32M
+            case 6: // FAT 16 over 32M
+            // Check more types we support
+            break;
+        default:
+            SHOW_ERROR( 1, "Not a FAT partition type 0x%X", p->type );
+            return EINVAL;
+        }
+
+        if( phantom_sync_read_sector( p, buf, 0, 1 ) )
+        {
+            SHOW_ERROR( 0, "%s can't read sector 0", p->name );
+            return EINVAL;
+        }
+
+        if( (buf[0x1FE] != 0x55) || (buf[0x1FF] != 0xAA) )
+        {
+            SHOW_ERROR0( 1, "No magic" );
+            return EINVAL;
+        }
+
+    // Do more checks, return zero if we decide this is our FS disk
+
+    return 0;
+    }
+
+If we said that it is our partiotion, next entry point will be called by kernel:
+
+.. code:: c
+
+    errno_t fs_start_fat( phantom_disk_partition_t *p )
+    {
+        FATFS *fs = calloc( sizeof(FATFS), 1);
+
+        fs->dev = p;
+
+        // Do FS specific init code
+
+        uufs_t *ufs = fatff_create_fs( fs );
+        if( !ufs )
+        {
+            SHOW_ERROR( 0, "can't create uufs for %s", p->name );
+            return ENOMEM;
+        }
+
+        char pname[FS_MAX_MOUNT_PATH];
+        partGetName( p, pname, FS_MAX_MOUNT_PATH );
+
+        char amnt_path[128];
+        if( ufs && auto_mount( pname, ufs, amnt_path, sizeof(amnt_path), AUTO_MOUNT_FLAG_AUTORUN ) )
+            SHOW_ERROR( 0, "can't automount %s", p->name );
+
+        return 0;
+    }
+
+This code createds specific structure for use inside the FS driver (``FATFS``),
+creates uufs_t file system descriptor, and mounts new file system. Note that 
+given in partition access structure ``p`` is stored in ``fs->dev`` so that FS
+can access its disk partition.
+
+Here is how its done:
+
+.. code:: c
+
+    int disk_write( FATFS *fs, const void* data, int sector, int nsect)
+    {
+
+        if( phantom_sync_write_sector( fs->dev, data, sector, nsect ) )
+            return RES_ERROR;
+
+        // Put to cache only if successfully written to disk
+        if( fs->cache )
+            cache_put_multiple( fs->cache, sector, nsect, data );
+
+        return 0;
+    }
+
+    static int disk_read ( FATFS *fs, void* data, int sector, int nsect)
+    {
+        if( fs->cache )
+            if( 0 == cache_get_multiple( fs->cache, sector, nsect, data ) )
+                return 0;
+
+        if( phantom_sync_read_sector( fs->dev, data, sector, nsect ) )
+            return RES_ERROR;
+
+        if( fs->cache )
+            cache_put_multiple( fs->cache, sector, nsect, data );
+
+        return 0;
+    }
+
+This code also shows how to use disk cache subsystem.
 
 -------
 Network
@@ -1303,16 +1414,16 @@ Windows
     window_handle_t drv_video_window_create(int xsize, int ysize, int x, int y, rgba_t bg, const char* title, int flags );
     void drv_video_window_destroy(window_handle_t w);
 
-    void 	w_to_top(window_handle_t w);
-    void 	w_to_bottom(window_handle_t w);
+    void    w_to_top(window_handle_t w);
+    void    w_to_bottom(window_handle_t w);
 
     void    w_clear( window_handle_t win );
     void    w_fill( window_handle_t win, rgba_t color );
 
-    void 	w_draw_rect( window_handle_t win, rgba_t color, rect_t r );
-    void 	w_fill_rect( window_handle_t win, rgba_t color, rect_t r );
+    void    w_draw_rect( window_handle_t win, rgba_t color, rect_t r );
+    void    w_fill_rect( window_handle_t win, rgba_t color, rect_t r );
 
-    void	w_draw_pixel( window_handle_t w, int x, int y, rgba_t color );
+    void    w_draw_pixel( window_handle_t w, int x, int y, rgba_t color );
     void    w_draw_line( window_handle_t w, int x1, int y1, int x2, int y2, rgba_t c);
     void    w_fill_ellipse( window_handle_t w, int x,int y,int lx,int ly, rgba_t c);
     void    w_fill_box( window_handle_t w, int x,int y,int lx,int ly, rgba_t c);
@@ -1330,7 +1441,7 @@ Windows
     void    w_set_title( window_handle_t w,  const char *title );
     void    w_get_bounds( window_handle_t w, rect_t *out );
     void    w_set_visible( window_handle_t h, int v );
-    void	w_set_bg_color( window_handle_t w, rgba_t color );
+    void    w_set_bg_color( window_handle_t w, rgba_t color );
 
 
 Controls
@@ -1356,13 +1467,11 @@ Create control:
     control_handle_t w_add_scrollbar( window_handle_t w, int x, int y, int xsize, int ysize, int maxval );
 
 
-Change control state or parameters:
+Change control state or parameters. Text functions accept UTF-8 encoding.
 
 .. code:: c
 
-    //! UTF-8
     void w_control_set_text( window_handle_t w, control_handle_t c, const char *text, color_t text_color );
-    //! UTF-8
     void w_control_get_text( window_handle_t w, control_handle_t c, char *text_buf, size_t buf_size );
     void w_control_set_icon( window_handle_t w, control_handle_t ch, drv_video_bitmap_t *icon );
 
@@ -1371,34 +1480,93 @@ Change control state or parameters:
         drv_video_bitmap_t *normal, drv_video_bitmap_t *pressed, drv_video_bitmap_t *hover  );
 
     void w_control_set_visible( window_handle_t w, control_handle_t ch, int visible ); // unimpl yet
-    void w_control_set_flags( window_handle_t w, control_handle_t ch, int toSet, int toReset );
     void w_control_set_position( window_handle_t w, control_handle_t ch, int x, int y );
+
+
+Set flags for a control:
+
+.. code:: c
+
+    void w_control_set_flags( window_handle_t w, control_handle_t ch, int toSet, int toReset );
+
+Following flags are defined:
+
+**CONTROL_FLAG_DISABLED**
+  This control is disabled - not painted and does not process input.
+  
+**CONTROL_FLAG_NOPAINT**
+  Control is not painted, but processes input. Use if you paint control manually.
+
+**CONTROL_FLAG_NOBORDER**
+  Do not paint border around the control. Border still will be paint if
+  control is in focus.
+  
+**CONTROL_FLAG_CALLBACK_HOVER**
+  Callback function will be called on mouse over the control.
+  
+**CONTROL_FLAG_CALLBACK_KEY**
+  Call callback on any key press. If no this flag, callback is just
+  called for enter in text entry field or key that changes on/off state
+  for buttons and similar controls.
+
+**CONTROL_FLAG_TOGGLE**
+  Button or menu item swithces on and off with each press.
+
+**CONTROL_FLAG_HORIZONTAL**
+  Lay control horizontally - not yet used.
+
+**CONTROL_FLAG_TEXT_RIGHT**
+  Put button text to the right of image.
+  
+**CONTROL_FLAG_NOFOCUS**
+  This control is passive - no events, no focus.
+
+**CONTROL_FLAG_NOBACKGROUND**
+  Do not paint control background - Unused?
+
+**CONTROL_FLAG_READONLY**
+  Control is just for display, don't accept user input - TODO implement
+
+**CONTROL_FLAG_ALT_FG**
+  Control foreground (active part) is paint in a different way.
+  Supported by scroll bar only.
+
+**CONTROL_FLAG_ALT_BG**
+  Control background (passive part) is paint in a different way
+  Supported by scroll bar only.
+
+
 
 Set callback to be called on major control state change.
 
 .. code:: c
+
     void w_control_set_callback( window_handle_t w, control_handle_t c, control_callback_t cb, void *callback_arg );
 
 
 Set control's children - controlled objects. If just window is given, switch its visibility. If window and control - switch control visibility.
 
 .. code:: c
+
     void w_control_set_children( window_handle_t w, control_handle_t c, window_handle_t w_child, control_handle_t c_child );
 
 Show bullet with number (``count`` parameter) in top right corner
 
 .. code:: c
+
     void w_control_set_notify( window_handle_t w, control_handle_t ch, int count ); 
 
 Set context (right click) menu for the control. Note that it is
 possible to set context menu for a whole window too.
 
 .. code:: c
+
     void w_control_set_menu( window_handle_t w, control_handle_t ch, window_handle_t m );
 
 For switch type controls (button, check box, etc) - set or get on/off (pressed/released) state of control.
 
 .. code:: c
+
     void w_control_set_state( window_handle_t w, control_handle_t ch, int pressed );
     void w_control_get_state( window_handle_t w, control_handle_t ch, int *ret );
 
@@ -1409,6 +1577,7 @@ Control scrollbar position and size.
 Set value or width to be negative to disable display of bar at all.
 
 .. code:: c
+
     void w_control_set_value( window_handle_t w, control_handle_t ch, int value, int width );  //< For scrollbar - set value & bar handle width
     void w_control_get_value( window_handle_t w, control_handle_t ch, int *value, int *width ); //< For scrollbar - get value & bar handle width
 
