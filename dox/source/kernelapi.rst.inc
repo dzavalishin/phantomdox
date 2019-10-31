@@ -1875,7 +1875,169 @@ in-kernel C code.
 Please refer to `Package .internal`_ for a complete reference of existing
 internal classes.
 
-.. TODO write more
+Objects as they look from C
+---------------------------
+
+From the kernel point of view PVM object is just a structure with an array or 
+structure at the end. If it is a regular object, it's data part is array of 
+pointers to other objects. If it is of internal class, object contents is a 
+structure of some type.
+
+.. code:: c
+
+    #include <vm/object.h>
+
+    struct object_PVM_ALLOC_Header
+    {
+        unsigned int                object_start_marker;
+        volatile int32_t            refCount;   //< for fast dealloc of locally-owned objects. If grows to INT_MAX it will be fixed at that value and ignored further. Such objects will be GC'ed in usual way
+        unsigned char               alloc_flags;
+        unsigned char               gc_flags;
+        unsigned int                exact_size; //< full object size including this header
+    };
+
+    struct pvm_object_storage
+    {
+        struct object_PVM_ALLOC_Header      _ah;
+
+        struct pvm_object_storage *         _class;
+        struct pvm_object_storage *         _satellites; // Points to chain of objects related to this one
+        u_int32_t                           _flags; 
+        unsigned int                        _da_size; // in bytes!
+
+        unsigned char                       da[];
+    };
+
+    typedef struct pvm_object_storage   pvm_object_storage_t;
+    typedef struct pvm_object_storage * pvm_object_t;
+
+**_class**
+  Pointer to an object which describes class of this object.
+
+**_satellites**
+  Used in a very special cases where there some additional data
+  must be associated with our object. Examples are weak references
+  (object must keep list of weak references that look at it) or
+  Java-style syncronization machinery, which needs mutex to be 
+  associated with arbitrary object.
+
+**_flags**
+  Used to denote special cases or help to check for some types
+  of objects very fast. Example is object of ``.internal.int``
+  class. It would be too long to go through the class reference to
+  check if this object is an int.
+
+**_da_size**
+  Size of object contents **in bytes**.
+
+There are numerous functions to access objects in different ways.  
+
+
+.. code:: c
+
+    pvm_object_t pvm_create_object(pvm_object_t type);
+    pvm_object_t pvm_get_class( pvm_object_t o );
+
+    #define      pvm_is_null( o ) ...
+    #define      pvm_isnull( o ) pvm_is_null( o )
+
+    pvm_object_t pvm_get_field( pvm_object_t , unsigned int no );
+    void         pvm_set_field( pvm_object_t , unsigned int no, pvm_object_t value );
+
+**pvm_create_object**
+  Create object of given class. For most internal classes there is
+  a ``pvm_get_NAME_class(void)`` function exist. For example, 
+  ``pvm_get_window_class(void)`` for ``.internal.window``. So if you
+  need a new int, ``pvm_create_object( pvm_get_int_class() )`` will do.
+
+**pvm_get_class**
+  Find out class of object.
+
+**pvm_is_null**
+  Check if object is null.
+
+**pvm_get_field, pvm_set_field**
+  Access fields of regular objects.
+
+.. code:: c
+
+    int          pvm_object_class_exactly_is( pvm_object_t object, pvm_object_t tclass );
+    int          pvm_object_class_is_or_parent( pvm_object_t object, pvm_object_t tclass );
+    int          pvm_object_class_is_or_child( pvm_object_t object, pvm_object_t tclass );
+
+Check object type.
+
+**pvm_object_class_exactly_is**
+  Find if object is of exactly this class. This one is rarely needed.
+
+**pvm_object_class_is_or_parent**
+  True if object class is ``tclass`` or its parent.
+
+**pvm_object_class_is_or_child**
+  True if object class is ``tclass`` or its child. This is the most typical
+  type check.
+
+.. TODO if implements interface
+
+
+Arrays operations. Note that there is no syncronization provided
+by basic array operations. You have to provide your own protection.
+
+.. TODO ref to pvm_spinlock and mutex
+
+.. code:: c
+
+    pvm_object_t pvm_get_array_ofield(pvm_object_t o, unsigned int slot  );
+    void         pvm_set_array_ofield(pvm_object_t o, unsigned int slot, pvm_object_t value );
+
+    int          pvm_get_array_size(pvm_object_t array);
+    void         pvm_append_array(pvm_object_t array, pvm_object_t value_to_append );
+    void         pvm_pop_array(pvm_object_t array, pvm_object_t value_to_pop );
+
+**pvm_get_array_ofield**
+  Read field of array.
+
+**pvm_set_array_ofield**
+  Set array field. Will silently extend array if you access absent element.
+
+**pvm_get_array_size**
+  How many slots in array right now.
+
+**pvm_append_array**
+  Extend array by one slot and put object to last slot. Practically push to stack.
+
+**pvm_pop_array**
+  Return last element, decreasing size of array by one. Pop from stack.
+
+.. TODO difference from usual field read?
+
+.. TODO need list implementation too.
+
+Debugging and printing.
+
+.. code:: c
+
+    void         pvm_object_print( pvm_object_t );
+    void         pvm_object_dump( pvm_object_t o );
+    void         dumpo( addr_t addr );
+    void         pvm_puts(pvm_object_t o );
+    pvm_object_t pvm_get_class_name( pvm_object_t );
+
+
+
+Running PVM code
+----------------
+
+Run new VM instance in a new thread. An ``object`` parameter must be 
+of ``.phantom.runnable`` class. 
+
+.. code:: c
+
+    errno_t pvm_run_new_thread( pvm_object_t object, pvm_object_t arg );
+
+This function will create new thread and execute method (with ordinal of 8)
+with given object as *this* and passing ``arg`` to that method.
+
 
 
 --------------
