@@ -1635,7 +1635,7 @@ Window functions to work with bitmap fonts:
   Scroll window one line up using given font height.  
 
 **w_font_tty_string**
-  Piant string processing TTY control chars:
+  Paint string processing TTY control chars:
   \\n, \\r, some of ANSI control sequences (text color).
   Update given coordinates.
 
@@ -1756,19 +1756,14 @@ They are based on a rect_t rectangle descriptor:
     #define rect_copy( out, in ) rect_add( out, in, in )
 
     void rect_add( rect_t *out, rect_t *a, rect_t *b );
-
     int rect_mul( rect_t *out, rect_t *a, rect_t *b );
-
     int rect_sub( rect_t *out1, rect_t *out2, rect_t *old, rect_t *new );
 
     int rect_eq( rect_t *a, rect_t *b );
     int rect_empty( rect_t *a );
 
     int rect_includes( rect_t *a, rect_t *b );
-
-//! Returns true if a intersects with (or equal to) b
     int rect_intersects( rect_t *a, rect_t *b );
-
     int point_in_rect( int x, int y, rect_t *r );
 
     int rect_dump( rect_t *a );
@@ -1784,8 +1779,20 @@ They are based on a rect_t rectangle descriptor:
   covered by ``old``, but not covered by ``new``. Returns nonzero if
   out2 is not equal to out1 and not empty.
 
+**rect_eq**
+  True if rectangles are equal.
+
+**rect_empty**
+  True if at least one of rectangle sizes is negative or zero.
+
 **rect_includes**
-  Returns true if a includes (or equal to) b.
+  Returns true if a includes (or is equal to) b.
+
+**rect_intersects**
+  Returns true if a intersects with (or is equal to) b.
+
+**point_in_rect**
+  Returns true if point belongs to rectangle.
 
 -------------------------
 Persistent virtual memory
@@ -1793,11 +1800,84 @@ Persistent virtual memory
 
 This is the core of native Phantom personality.
 
+
+Persistent memory is used by Phantom OS bytecode vitrual machine (referred to as pvm).
+This memory is occupied by pvm objects and is subject of garbage collector work.
+
+Kernel can access this memory and create and read objects in there, but there are some
+rules.
+
+First of all, this memory is snapshotted to disk from time to time, and it 
+must be in consistent state during snapshot. It means that when key stage if
+snapshot is going on no thread can access this memory. 
+
+.. sidebar:: Snapshots are fast
+  Note that key stage of snapshot is extremely short, so it does not 
+  stop any activity for a noticeable time.
+
+There are two functions that are used to interlock access to persistent memory.
+
+
+.. code:: c
+
+    #include <kernel/snap_sync.h>
+
+    void vm_lock_persistent_memory( void );
+    void vm_unlock_persistent_memory( void );
+
+**vm_lock_persistent_memory**
+  Request access to persistent memory address space, prevent snapshots.
+
+**vm_unlock_persistent_memory**
+  Release access to persistent memory address space, enable snapshots.
+
+Kernel code must call ``vm_lock_persistent_memory`` before it is 
+going to access persistent memory and ``vm_unlock_persistent_memory``
+as soon as possible after it.
+
+..warning::
+  Keeping access to persistent memory for too long will keep other threads waiting
+  for snapshot to finish for too long too, because snapshot can not happen 
+  as long as you keep persistent memory locked. Be really quick.
+
+Objects and classes
+-------------------
+
+Phantom VM is an object-oriented VM (actually it has special support for 
+functional programming too). Everything inside persistent memory is object.
+Object is instance of class. Which is object too.
+
+Regular objects contain just pointers to other objects. Irregular (internal classes)
+objects contain some kind of data. For exmaple, object of class 
+``internal.string`` contains text string.
+
+.. sidebar:: Strings are files
+  Actually phantom strings do not restrict its contents in any way.
+  String can contain just any binary data including binary zeroes.
+  That is why strings in Phantom are freqently used as... files.
+  For example, some applications keep bitmap pictures in strings.
+  See an example for `.internal.bitmap`_ class.
+
+Internal classes
+----------------
+
+Phantom userland (virtual bytecode machine) code communicates with OS kernel
+by means of so called *internal* classes. Each internal class is implemented by
+in-kernel C code.
+
+`Source code of internal classes <https://github.com/dzavalishin/phantomuserland/tree/master/phantom/vm/sys>`_
+
+.. TODO write more
+
+
 --------------
 Unix subsystem
 --------------
 
-Simple POISX/Linux emulation.
+Simple POSIX/Linux emulation.
+
+(This part of book is not yet written)
+
 
 --------------------
 Debugging facilities
