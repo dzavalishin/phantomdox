@@ -1319,9 +1319,9 @@ Video driver descriptor structure:
         void    (*bitblt_part) (const rgba_t *from, int src_xsize, int src_ysize, int src_xpos, int src_ypos, int dst_xpos, int dst_ypos, int xsize, int ysize, zbuf_t zpos, u_int32_t flags );
     };
 
-    #define VIDEO_PROBE_FAIL 0
+    #define VIDEO_PROBE_FAIL    0
     #define VIDEO_PROBE_SUCCESS 1
-    #define VIDEO_PROBE_ACCEL 2 
+    #define VIDEO_PROBE_ACCEL   2 
 
 **probe**
   This is the entry point which is called by graphics subsystem on start.
@@ -1412,7 +1412,8 @@ Windows
     #include <video/window.h>
 
     window_handle_t drv_video_window_create(int xsize, int ysize, int x, int y, rgba_t bg, const char* title, int flags );
-    void drv_video_window_destroy(window_handle_t w);
+ 
+    void    drv_video_window_destroy(window_handle_t w);
 
     void    w_to_top(window_handle_t w);
     void    w_to_bottom(window_handle_t w);
@@ -1452,6 +1453,7 @@ Control is graphical elemen attached to window and processing user input.
 Create control:
 
 .. code:: c
+
     #include <video/control.h>
 
     control_handle_t w_add_button( window_handle_t w, int id, int x, int y, drv_video_bitmap_t *bmp, drv_video_bitmap_t *pressed, int flags );
