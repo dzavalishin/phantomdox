@@ -1812,6 +1812,7 @@ must be in consistent state during snapshot. It means that when key stage if
 snapshot is going on no thread can access this memory. 
 
 .. sidebar:: Snapshots are fast
+
   Note that key stage of snapshot is extremely short, so it does not 
   stop any activity for a noticeable time.
 
@@ -1836,6 +1837,7 @@ going to access persistent memory and ``vm_unlock_persistent_memory``
 as soon as possible after it.
 
 .. warning::
+
   Keeping access to persistent memory for too long will keep other threads waiting
   for snapshot to finish for too long too, because snapshot can not happen 
   as long as you keep persistent memory locked. Be really quick.
@@ -1852,6 +1854,7 @@ objects contain some kind of data. For exmaple, object of class
 ``internal.string`` contains text string.
 
 .. sidebar:: Strings are files
+
   Actually phantom strings do not restrict its contents in any way.
   String can contain just any binary data including binary zeroes.
   That is why strings in Phantom are freqently used as... anonymous files.
