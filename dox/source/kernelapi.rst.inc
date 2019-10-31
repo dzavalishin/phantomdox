@@ -702,7 +702,7 @@ Classic thread pool subsystem - can not be triggered from interrupt.
 Disk IO
 -------
 
-Low lwvwl disk IO subsystem is targeted mostly to support paging 
+Low level disk IO subsystem is targeted mostly to support paging 
 function as main Phantom IO subsystem is persistent memory.
 
 IO Request
@@ -750,12 +750,117 @@ IO Request
 Syncronous disk IO
 ------------------
 
+To be described.
+
+.. TODO write
+
 Disk registration
 -----------------
 
+Here is an example of disk driver entry point and registering
+a new disk in the system.
+
+.. code:: c
+
+    #include <disk_q.h>
+
+    phantom_disk_partition_t *p = phantom_create_virtio_partition_struct( cfg.capacity, &vdev );
+    errno_t ret = phantom_register_disk_drive(p);
+
+    static errno_t memdisk_AsyncIo( struct phantom_disk_partition *part, pager_io_request *rq )
+    {
+        phantom_device_t *dev = part->specific;
+        rq->rc = 0;
+
+        size_t size = rq->nSect * part->block_size;
+        off_t shift = rq->blockNo * part->block_size;
+
+        if( size+shift > dev->iomemsize )
+        {
+            rq->rc = EIO;
+            pager_io_request_done( rq );
+            return EIO;
+        }
+
+        if(rq->flag_pageout)
+            rq->rc = EIO;
+        else
+            // read
+            memcpy_v2p( rq->phys_page, (void *)dev->iomem+shift, size );
+
+        pager_io_request_done( rq );
+        return rq->rc;
+    }
+
+    phantom_disk_partition_t *phantom_create_memdisk_partition_struct( 
+        phantom_device_t *dev, long size, int unit )
+    {
+        phantom_disk_partition_t * ret = 
+            phantom_create_partition_struct( 0, 0, size );
+
+        ret->asyncIo = memdisk_AsyncIo;
+        ret->flags |= PART_FLAG_IS_WHOLE_DISK;
+
+        ret->specific = dev;
+        strlcpy( ret->name, "MEMD0", sizeof(ret->name) );
+        ret->name[4] += unit;
+        return ret;
+    }
+
+
+    static void memdisk_connect( phantom_device_t *dev, int nSect )
+    {
+        phantom_disk_partition_t *part = 
+            phantom_create_memdisk_partition_struct( dev, nSect, 0 );
+        if(part == 0)
+        {
+            SHOW_ERROR0( 0, "Failed to create whole disk partition" );
+            return;
+        }
+
+        errno_t err = phantom_register_disk_drive(part);
+        if(err)
+        {
+            SHOW_ERROR( 0, "Disk %p err %d", dev, err );
+            return;
+        }
+    }
+
+Now some explanation.
+
+**memdisk_AsyncIo**
+  This is driver entry point which is called with a new IO request
+  and has to handle it. In this simple example request is proicessed
+  right in place, but in real driver this function will, usually,
+  just start IO and set things up so that pager_io_request_done() will
+  be called in device interrupt.
+
+**pager_io_request_done**
+  This function must be called for a reqest when it is processed (with
+  either success or error) with driver. Request ``rc`` field must be
+  non-zero if request is not executed for some reason.
+
+**phantom_create_memdisk_partition_struct**
+  This is a driver's helper function which creates driver descriptor
+  structure for a kernel. This structure is used by kernel to access this
+  driver for IO. Note ``ret->asyncIo = memdisk_AsyncIo;`` line, which tells
+  what function to call for incoming IO request for this driver's device.
+
+**phantom_register_disk_drive**
+  Driver init code calls this function to tell kernel that this is a disk
+  that is served by this driver. Kernel will try to identify disk contents -
+  if there are partitions on disk, kernel will add partition handling structures
+  and in turn try to identify partition contents. Finally either disk or partition
+  will be recognized as Phantom OS disk, some kind of file system (FAT32 is the
+  only one that is supported), or not recognized at all.
 
 Parttitions
 -----------
+
+The only type of partitioning supported in current kernel is traditional 
+PC MBR type one. Additional kinds of disk breakdown can be added easily.
+
+.. TODO give a clue
 
 File systems
 ------------
@@ -771,16 +876,278 @@ without traditional FS access.
 Network
 -------
 
+Phantom has classical TCP/IP netwrok stack. 
+
 Interfaces
 ----------
 
-DHCP
-----
+This chapter describes how to connect new network driver to a
+network interface.
+
+Driver entry points for network IO:
+
+.. code:: c
+
+    #include <kernel/ethernet_defs.h>
+    #include <kernel/net.h>
+
+    int pcnet32_read( struct phantom_device *dev, void *buf, int len);
+    int pcnet32_write(struct phantom_device *dev, const void *buf, int len);
+    int pcnet32_get_address( struct phantom_device *dev, void *buf, int len);
+
+**pcnet32_get_address**
+  Read network card MAC address.
+
+.. code:: c
+
+    phantom_device_t * dev = malloc(sizeof(phantom_device_t));
+    dev->name = "pcnet";
+    dev->seq_number = seq_number++;
+    dev->dops.read = pcnet32_read;
+    dev->dops.write = pcnet32_write;
+    dev->dops.get_address = pcnet32_get_address;
+
+    // Init other fields of dev as it is needed
+
+    ifnet *interface;
+    if( if_register_interface( IF_TYPE_ETHERNET, &interface, dev) )
+        printf("Failed to register interface for %s", dev->name );
+    else
+        if_simple_setup(interface, WIRED_ADDRESS, WIRED_NETMASK, WIRED_BROADCAST, WIRED_NET, WIRED_ROUTER, DEF_ROUTE_ROUTER );
+
+**if_simple_setup**
+  Right now we use some predefined addresses first, but 
+  this function starts DHCP to get correct setup.
+  It is a hack and must be fixed later.
+
+.. TODO something is wrong here - netmask? def route?
+
+.. code:: c
+
+    #define WIRED_ADDRESS    IPV4_DOTADDR_TO_ADDR(10, 0, 2, 123)
+    #define WIRED_NETMASK    0xffffff00
+    #define WIRED_BROADCAST  IPV4_DOTADDR_TO_ADDR(10, 0, 2, 0xFF)
+    #define WIRED_NET        IPV4_DOTADDR_TO_ADDR(10, 0, 2, 0)
+    #define WIRED_ROUTER     IPV4_DOTADDR_TO_ADDR(10, 0, 2, 123)
+    #define DEF_ROUTE_ROUTER IPV4_DOTADDR_TO_ADDR(10, 0, 2, 2)
+
+
 
 ----------------------
 Main drivers subsystem
 ----------------------
 
+These are structures that represent a driver. Just fields that are of
+use for a driver are shown, there are more fields, but most of them are
+just for kernel.
+
+Driver entry points:
+
+.. code:: c
+
+    #include <device.h>
+
+    struct phantom_dev_ops
+    {
+        int (*start)(struct phantom_device *dev);
+        int (*stop)(struct phantom_device *dev);
+
+        int (*read)(struct phantom_device *dev, void *buf, int len);
+        int (*write)(struct phantom_device *dev, const void *buf, int len);
+
+        int (*get_address)(struct phantom_device *dev, void *buf, int len);
+
+        errno_t (*ioctl)(struct phantom_device *dev, int type, void *buf, int len);
+
+        errno_t	(*getproperty)( struct phantom_device *dev, const char *pName, char *pValue, int vlen );
+        errno_t	(*setproperty)( struct phantom_device *dev, const char *pName, const char *pValue );
+        errno_t	(*listproperties)( struct phantom_device *dev, int nProperty, char *pValue, int vlen );
+    };
+
+
+**start**
+  Called if kernel is going to use this device - before first call to any
+  other entry point.
+
+**stop**
+  Called if no access to driver is going to be any more.
+
+**read**
+  Read data from device. For character or network devices only. Block devices register
+  themselves for block IO requests separately. 
+
+.. TODO reference
+
+**write**
+  Write data to device.
+
+**get_address**
+  Special for network devices - must return MAC address.
+
+**ioctl**
+  For POSIX subsystem. Classic ioctl.
+
+**getproperty**
+  Reach man's ioctl, get device's named property value.
+  Can be used from POSIX and object land code.
+
+**getproperty**
+  Set device's named property value.
+
+**listproperties**
+  Tell names of properties device supports.
+
+.. TODO ref to object interface, ref to POSIX interface
+
+Device descriptor structure:
+
+.. code:: c
+
+    struct phantom_device
+    {
+        const char *                name;
+        int                         seq_number; // Number of the device for the same name (driver)
+
+        void *                      drv_private; // Driver's private part
+
+        phantom_dev_ops_t           dops;
+
+        addr_t                      iobase;
+        int                         irq;
+        physaddr_t                  iomem;
+        size_t                      iomemsize;
+
+        struct properties           *props;
+    };
+
+    typedef struct phantom_device phantom_device_t;
+
+    void devfs_register_dev( phantom_device_t* dev );
+
+**name**
+  Device name.
+
+**seq_number**
+  Sequence number of device, if driver presents more than one.
+
+**drv_private**
+  POinter to driver's private data structure which is specific for
+  this device.
+
+**dops**
+  Entry points, must be filled for kernel to access.
+
+**iobase, irq, iomem, iomemsize**
+  Can be used or ignored by driver. Kernel does not interpret.
+
+**props**
+  Device properties, see separate description.
+
+.. TODO ref to props description
+
+Device properties
+-----------------
+
+.. code:: c
+
+    #include <phantom_types.h>
+
+    typedef enum
+    {
+        pt_int32,
+        pt_mstring,         // malloced string
+        pt_enum32,         	// enum int32 - unimpl!
+    } property_type_t;
+
+    struct property;
+
+    typedef struct properties {
+        const char *          prefix;         // 4-byte char prefix of this group, like 'dev.', 'gen.' or 'fsp.'
+
+        struct property     *list;
+        size_t              lsize;
+
+        void *              (*valp)(struct properties *ps, void *context, size_t offset );
+    } properties_t;
+
+    typedef struct property {
+        property_type_t     type;
+        const char 		*name;
+        size_t              offset;
+        void                *valp;
+
+        char                **val_list; // for enums
+
+        void                (*activate)(struct properties *ps, void *context, size_t offset, void *vp );
+        errno_t             (*setf)(struct properties *ps, void *context, size_t offset, void *vp, const char *val);
+        errno_t             (*getf)(struct properties *ps, void *context, size_t offset, void *vp, char *val, size_t len);
+    } property_t;
+
+
+    errno_t gen_dev_listproperties( struct phantom_device *dev, int nProperty, char *pValue, int vlen );
+    errno_t	gen_dev_getproperty( struct phantom_device *dev, const char *pName, char *pValue, int vlen );
+    errno_t	gen_dev_setproperty( struct phantom_device *dev, const char *pName, const char *pValue );
+
+    errno_t gen_listproperties( properties_t *ps, int nProperty, char *pValue, int vlen );
+    errno_t	gen_getproperty( properties_t *ps, void *context, const char *pName, char *pValue, int vlen );
+    errno_t	gen_setproperty( properties_t *ps, void *context, const char *pName, const char *pValue );
+
+Usage example. Driver init code, set entry points for properties:
+
+.. code:: c
+
+    dev->dops.getproperty = es1370_getproperty;
+    dev->dops.setproperty = es1370_setproperty;
+    dev->dops.listproperties = es1370_listproperties;
+
+List available properties. This function will be called with
+increasing ``nProperty`` value until it returns an error.
+
+.. code:: c
+
+    static const char *pList = "sampleRate";
+
+    static errno_t es1370_listproperties( struct phantom_device *dev, int nProperty, char *pValue, int vlen )
+    {
+        if( nProperty > 0 ) return ENOENT;
+        strlcpy( pValue, pList, vlen );
+        return 0;
+    }
+
+Get value of property:
+
+.. code:: c
+
+    static errno_t	es1370_getproperty( struct phantom_device *dev, const char *pName, char *pValue, int vlen )
+    {
+        es1370_t *es = dev->drv_private;
+
+        if(0 == stricmp(pName, "samplerate"))
+        {
+            snprintf( pValue, vlen, "%d", es->samplerate );
+            return 0;
+        }
+
+        return ENOTTY;
+    }
+
+.. code:: c
+
+    static errno_t	es1370_setproperty( struct phantom_device *dev, const char *pName, const char *pValue )
+    {
+        es1370_t *es = dev->drv_private;
+
+        if(0 == stricmp(pName, "samplerate"))
+        {
+            if( 1 != sscanf( pValue, "%d", &es->samplerate ) )
+                return EINVAL;
+            set_sampling_rate(dev, es->samplerate);
+            return 0;
+        }
+    return ENOTTY;
+    }
+
+.. TODO describe other ways to use
 
 -----------------------
 Video drivers subsystem
@@ -788,6 +1155,103 @@ Video drivers subsystem
 
 Video driver
 ------------
+
+Video driver must be, at least, able to:
+
+- Turn on 24 or 32 bit video mode for the graphics hardware
+- Set up linear video buffer access
+- Provide functions to write and read video buffer
+
+There are ready made functions to access usual frame buffer formats for 
+24 or 32 bit buffers.
+
+Video driver descriptor structure:
+
+.. code:: c
+
+    struct drv_video_screen_t
+    {
+        const char  *name;
+
+        int     xsize;
+        int     ysize;
+        int     bpp;
+
+        int     mouse_x;
+        int     mouse_y;
+        int     mouse_flags;
+
+        char *  screen;
+
+        int     (*probe) (void); // Returns true if hardware present, sets xsize/ysize.
+        int     (*start) (void); // Start driver, switch to graphics mode.
+        errno_t (*accel) (void); // Start driver in accelerating mode - video mode is already set by VESA, just add some acceleration to existing drv
+        int     (*stop)  (void); // Stop driver, switch to text mode. Can be called in unstable kernel state, keep it simple.
+
+        void    (*update) (void);
+
+        void    (*bitblt) (const rgba_t *from, int xpos, int ypos, int xsize, int ysize, zbuf_t zpos, u_int32_t flags);
+        void    (*winblt) ( const window_handle_t from, int xpos, int ypos, zbuf_t zpos);
+        void    (*readblt) ( rgba_t *to, int xpos, int ypos, int xsize, int ysize);
+
+        void    (*mouse)  (void); // mouse activity detected - callback from driver
+
+        void    (*mouse_redraw_cursor)(void);
+        void    (*mouse_set_cursor)(drv_video_bitmap_t *cursor);
+        void    (*mouse_disable)(void);
+        void    (*mouse_enable)(void);
+
+    // Acceleration
+
+        void    (*copy) (int src_xpos, int src_ypos, int dst_xpos, int dst_ypos, int xsize, int ysize );
+        void    (*clear) (int xpos, int ypos, int xsize, int ysize );
+        void    (*bitblt_part) (const rgba_t *from, int src_xsize, int src_ysize, int src_xpos, int src_ypos, int dst_xpos, int dst_ypos, int xsize, int ysize, zbuf_t zpos, u_int32_t flags );
+    };
+
+    #define VIDEO_PROBE_FAIL 0
+    #define VIDEO_PROBE_SUCCESS 1
+    #define VIDEO_PROBE_ACCEL 2 
+
+**probe**
+  This is the entry point which is called by graphics subsystem on start.
+  It must find out if there is some video device that this driver can control.
+  Return values are: ``VIDEO_PROBE_FAIL`` - no hardware found, driver is skipped.
+  ``VIDEO_PROBE_SUCCESS`` - driver can work with this hardware, either in basic or
+  accelerated mode (if accelerated - driver must provide corresponding entry points).
+  ``VIDEO_PROBE_ACCEL`` - driver can not initialize hardware and setup frame buffer,
+  but can provide additional acceleration. The last mode is usually assumes that
+  basic VESA driver will init hardware and this driver will do just acceleration.
+  If driver reports success, its descriptor structure must be filled with maximum
+  possible screen size and bpp. 
+
+**start**
+  Start driver. Graphics subsystem decided that this driver is the best among all 
+  and want it to control the display. Driver must set up video mode, set entry points
+  and map frame buffer into the kernel address space.
+
+**stop**
+  Turn graphics off, set character mode if possible, release resources.
+
+**accel**
+  Start in accelerating mode. Other driver is already set up video mode,
+  this one has just to provide acceleration entry points.
+
+Following entry points are called after driver started to access device:
+
+**update**
+  Finally after frame buffer is updated. Used if hardware needs some kick
+  to redisplay screen or if screen is virtual or network.
+
+**bitblt**
+  Copy bitmap to screen. 
+
+.. TODO give info on standard funcs
+
+**winblt**
+  Copy contents of a window to screen.
+
+**readblt**
+  Read bitmap from screen. Used by default mouse cursor engine.
 
 Accelerating driver
 -------------------
@@ -797,20 +1261,20 @@ on VESA or some other video driver to set up video mode
 and access to frame buffer, but can provide accelerated 
 functions.
 
-Mouse cursor
-^^^^^^^^^^^^
+Entry points:
 
-Support for hardware mouse cursor painting.
+**mouse_set_cursor**
+  In accelerated mode supposed to provide hardware cursor.
 
-Rectangle copy
-^^^^^^^^^^^^^^
+**mouse_redraw_cursor**
+  New cursor coordinated are in ``mouse_x`` and ``mouse_y`` fields.
+  Move hardware cursor to that position.
 
-Copying screen parts.
+**copy**
+  Copy (bitblt) part of screen to other place.
 
-Rectangle fill
-^^^^^^^^^^^^^^
-
-Filing part of screen with color.
+**clear**
+  Fill part of screen with color.
 
 
 
