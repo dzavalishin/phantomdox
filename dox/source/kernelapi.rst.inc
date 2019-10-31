@@ -1890,22 +1890,22 @@ structure of some type.
     struct object_PVM_ALLOC_Header
     {
         unsigned int                object_start_marker;
-        volatile int32_t            refCount;   //< for fast dealloc of locally-owned objects. If grows to INT_MAX it will be fixed at that value and ignored further. Such objects will be GC'ed in usual way
+        volatile int32_t            refCount;
         unsigned char               alloc_flags;
         unsigned char               gc_flags;
-        unsigned int                exact_size; //< full object size including this header
+        unsigned int                exact_size;
     };
 
     struct pvm_object_storage
     {
-        struct object_PVM_ALLOC_Header      _ah;
+        struct object_PVM_ALLOC_Header _ah;
 
-        struct pvm_object_storage *         _class;
-        struct pvm_object_storage *         _satellites; // Points to chain of objects related to this one
-        u_int32_t                           _flags; 
-        unsigned int                        _da_size; // in bytes!
+        struct pvm_object_storage *    _class;
+        struct pvm_object_storage *    _satellites;
+        u_int32_t                      _flags; 
+        unsigned int                   _da_size;
 
-        unsigned char                       da[];
+        unsigned char                  da[];
     };
 
     typedef struct pvm_object_storage   pvm_object_storage_t;
@@ -1961,9 +1961,9 @@ There are numerous functions to access objects in different ways.
 
 .. code:: c
 
-    int          pvm_object_class_exactly_is( pvm_object_t object, pvm_object_t tclass );
-    int          pvm_object_class_is_or_parent( pvm_object_t object, pvm_object_t tclass );
-    int          pvm_object_class_is_or_child( pvm_object_t object, pvm_object_t tclass );
+    int pvm_object_class_exactly_is( pvm_object_t object, pvm_object_t tclass );
+    int pvm_object_class_is_or_parent( pvm_object_t object, pvm_object_t tclass );
+    int pvm_object_class_is_or_child( pvm_object_t object, pvm_object_t tclass );
 
 Check object type.
 
@@ -2005,6 +2005,7 @@ by basic array operations. You have to provide your own protection.
 
 **pvm_append_array**
   Extend array by one slot and put object to last slot. Practically push to stack.
+  **Mind the syncronization!**
 
 **pvm_pop_array**
   Return last element, decreasing size of array by one. Pop from stack.
