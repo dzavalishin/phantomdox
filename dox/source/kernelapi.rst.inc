@@ -1593,6 +1593,10 @@ Fonts
 
 Phantom graphics subsystem supports bitmap and TrueType fonts.
 
+.. code:: c
+
+    #incude <video/font.h>
+
 Preinstalled set of bitmap fonts:
 
 drv_video_16x16_font, drv_video_8x16ant_font, drv_video_8x16bro_font,
@@ -1717,7 +1721,9 @@ Use font:
 **w_ttfont_string_size**
   Calculate bounding rectangle for string.
 
+There are UTF-32 versions of these functions exist, see header file.
 
+.. TODO UTF-32 versions
 
 
 UTF-8 and UTF-32
@@ -1727,6 +1733,59 @@ Main string encoding in Phantom is UTF-8. But there
 are parts of system (namely - keyboard driver) that 
 expect UTF-32 encoding.
 Conversion is supported, of course.
+
+.. TODO conv funcs
+
+Rectangle algebra
+-----------------
+
+There is a set of functions to work with window/image coordinates.
+
+They are based on a rect_t rectangle descriptor:
+
+.. code:: c
+
+    #include <video/rect.h>
+
+    typedef struct rect
+    {
+        int x, y;
+        int xsize, ysize;
+    } rect_t;
+
+    #define rect_copy( out, in ) rect_add( out, in, in )
+
+    void rect_add( rect_t *out, rect_t *a, rect_t *b );
+
+    int rect_mul( rect_t *out, rect_t *a, rect_t *b );
+
+    int rect_sub( rect_t *out1, rect_t *out2, rect_t *old, rect_t *new );
+
+    int rect_eq( rect_t *a, rect_t *b );
+    int rect_empty( rect_t *a );
+
+    int rect_includes( rect_t *a, rect_t *b );
+
+//! Returns true if a intersects with (or equal to) b
+    int rect_intersects( rect_t *a, rect_t *b );
+
+    int point_in_rect( int x, int y, rect_t *r );
+
+    int rect_dump( rect_t *a );
+
+**rect_add**
+  Resulting rectangle is rectangle that includes both of source ones.
+
+**rect_mul**  
+  Resulting rectangle is intersection. Function returns true if intersection exists.
+
+**rect_sub**
+  Calculates two rectangles which together cover space which is
+  covered by ``old``, but not covered by ``new``. Returns nonzero if
+  out2 is not equal to out1 and not empty.
+
+**rect_includes**
+  Returns true if a includes (or equal to) b.
 
 -------------------------
 Persistent virtual memory
