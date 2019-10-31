@@ -1835,7 +1835,7 @@ Kernel code must call ``vm_lock_persistent_memory`` before it is
 going to access persistent memory and ``vm_unlock_persistent_memory``
 as soon as possible after it.
 
-..warning::
+.. warning::
   Keeping access to persistent memory for too long will keep other threads waiting
   for snapshot to finish for too long too, because snapshot can not happen 
   as long as you keep persistent memory locked. Be really quick.
@@ -1854,7 +1854,9 @@ objects contain some kind of data. For exmaple, object of class
 .. sidebar:: Strings are files
   Actually phantom strings do not restrict its contents in any way.
   String can contain just any binary data including binary zeroes.
-  That is why strings in Phantom are freqently used as... files.
+  That is why strings in Phantom are freqently used as... anonymous files.
+  It is handy to put assets into strings and Phantom language compiler
+  has special support for this kind of use.
   For example, some applications keep bitmap pictures in strings.
   See an example for `.internal.bitmap`_ class.
 
@@ -1866,6 +1868,9 @@ by means of so called *internal* classes. Each internal class is implemented by
 in-kernel C code.
 
 `Source code of internal classes <https://github.com/dzavalishin/phantomuserland/tree/master/phantom/vm/sys>`_
+
+Please refer to `Package .internal`_ for a complete reference of existing
+internal classes.
 
 .. TODO write more
 
