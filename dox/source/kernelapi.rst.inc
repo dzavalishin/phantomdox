@@ -2252,6 +2252,146 @@ Character buffer chains - cbuf
 Hash tables - khash
 -------------------
 
+Kernel hash tables are used everywhare around to map 
+keys (like names or ports, or IP addressed) to handles or 
+structure pointers.
+
+.. code:: c
+
+    #include <kernel/khash.h>
+
+    void *hash_init(unsigned int table_size, int next_ptr_offset,
+    	int compare_func(void *a, const void *key),
+	    unsigned int hash_func(void *a, const void *key, unsigned int range)
+        );
+
+    int hash_uninit(void *_hash_table);
+
+    int hash_insert(void *_hash_table, void *_elem);
+    int hash_remove(void *_hash_table, void *_elem);
+
+    void *hash_find(void *_hash_table, void *e);
+    void *hash_lookup(void *_hash_table, const void *key);
+
+    struct hash_iterator *hash_open(void *_hash_table, struct hash_iterator *i);
+    void hash_close(void *_hash_table, struct hash_iterator *i, bool free_iterator);
+    void *hash_next(void *_hash_table, struct hash_iterator *i);
+    void hash_rewind(void *_hash_table, struct hash_iterator *i);
+
+    void hash_dump(void *_hash_table);
+
+    unsigned int hash_hash_str( const char *str );
+
+
+**hash_init**
+  Set up a new hash. An ``table_size`` parameter
+  determines size of hash table.
+  An ``next_ptr_offset`` parameter gives offset to a field in a structure
+  wich is used as poiner to next sibling in hash node list. 
+  Use ``offsetof(type_name, next_ptr)`` and add
+  ``void *next_ptr`` field in a structure that you're going to keep in hash.
+
+  Hash function should calculate hash on either e or key,
+  depending on which one is not NULL.
+
+  unsigned int hash_func(void *e, const void *key, unsigned int range);
+
+  Compare function should compare the element with the key, returning 0 
+  if equal, other if not.
+
+  int compare_func(void *e, const void *key);
+
+.. note::
+  Compare func can be null, in which case the hash
+  code will compare the key pointer with the target.
+
+Usage example. Create hash table for network interfaces. Note ``next`` field
+in interface structure which is used by hash table code.
+
+.. code:: c
+
+    typedef struct ifnet {
+        struct ifnet *next;
+        if_id id;
+        ...
+        other fields of interface structure
+        ...
+    } ifnet;
+
+
+    static int if_compare_func(void *_i, const void *_key)
+    {
+        struct ifnet *i = _i;
+        const if_id *id = _key;
+
+        if(i->id == *id) return 0;
+        else return 1;
+    }
+
+    static unsigned int if_hash_func(void *_i, 
+        const void *_key, unsigned int range)
+    {
+        struct ifnet *i = _i;
+        const if_id *id = _key;
+
+        if(i) return (i->id % range);
+        else  return (*id % range);
+    }
+
+    ifhash = hash_init(16, offsetof(ifnet, next),
+        &if_compare_func, &if_hash_func);
+
+
+Add object to hash:
+
+.. code:: c
+
+    ifnet *i;
+  
+    mutex_lock(&ifhash_lock);
+    hash_insert(ifhash, i);
+    mutex_unlock(&ifhash_lock);
+
+
+Use hash to find interface by interface id:
+
+.. code:: c
+
+    ifnet *if_id_to_ifnet(if_id id)
+    {
+        ifnet *i;
+
+        mutex_lock(&ifhash_lock);
+        i = hash_lookup(ifhash, &id);
+        mutex_unlock(&ifhash_lock);
+
+        return i;
+    }
+
+
+Iterate through hash items:
+
+.. code:: c
+
+    ifnet *if_path_to_ifnet(const char *path)
+    {
+        ifnet *i;
+        struct hash_iterator iter;
+
+        mutex_lock(&ifhash_lock);
+        hash_open(ifhash, &iter);
+        while((i = hash_next(ifhash, &iter)) != NULL) {
+            if(!strcmp(path, i->path))
+                break;
+        }
+        hash_close(ifhash, &iter, false);
+        mutex_unlock(&ifhash_lock);
+
+        return i;
+    }
+
+
+
 
 --------------------
 Debugging facilities
