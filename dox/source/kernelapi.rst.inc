@@ -2045,10 +2045,88 @@ with given object as *this* and passing ``arg`` to that method.
 Unix subsystem
 --------------
 
-Simple POSIX/Linux emulation.
+Phantom OS includes simple POSIX/Linux emulation.
 
-(This part of book is not yet written)
+(This part of book is not complete)
 
+File IO
+-------
+
+
+BeOS ports
+----------
+
+This is not POSIX, but is more or less meaningless without POSIX.
+Ports is a microkernel style gear that can be used to write server
+processes that serve other parts of OS. Port is named message passing IPC
+channel. Port message is message type (integer) and message body, which is 
+simply a byte buffer. Message type is not interpreted by kernel. Its meaning is
+defined by server party.
+
+.. code:: c
+
+    #include <newos/port.h>
+
+    errno_t phantom_port_create(port_id *ret, int32 queue_length, const char *name);
+    errno_t phantom_port_close(port_id id);
+    errno_t phantom_port_delete(port_id id);
+    errno_t phantom_port_find(port_id *ret, const char *port_name);
+    errno_t phantom_port_buffer_size(ssize_t *sizep, port_id port);
+    errno_t phantom_port_buffer_size_etc(ssize_t *sizep, port_id port,
+					uint32 flags,
+					bigtime_t timeout);
+    errno_t phantom_port_count(int32 *countp, port_id port);
+    errno_t phantom_port_read(ssize_t *len, 
+					port_id port,
+					int32 *msg_code,
+					void *msg_buffer,
+					size_t buffer_size);
+    errno_t phantom_port_read_etc(ssize_t *len, 
+					port_id port,
+					int32 *msg_code,
+					void *msg_buffer,
+					size_t buffer_size,
+					uint32 flags,
+					bigtime_t timeout);
+    errno_t phantom_port_write(port_id port,
+					int32 msg_code,
+					void *msg_buffer,
+					size_t buffer_size);
+    errno_t phantom_port_write_etc(port_id port,
+					int32 msg_code,
+					void *msg_buffer,
+					size_t buffer_size,
+					uint32 flags,
+					bigtime_t timeout);
+
+
+
+**phantom_port_create**
+  Create port win given ``name``. The ``queue_length`` parameter sets number
+  of outstanding messages that can wait in port queue for processing. 
+
+**phantom_port_find**
+  Find port created by other party by name.
+
+**phantom_port_buffer_size_etc**
+  Get size of buffer required to receive next message from port.
+
+**phantom_port_buffer_size**
+  Get size of buffer required to receive next message from port.
+  Wait forever.
+
+**phantom_port_write_etc**
+  Send a message to ``port``. Message type is in ``msg_code`` parameter. 
+  Message itself is in the ``msg_buffer``, its size is ``buffer_size``. 
+  If ``flags`` has value of ``PORT_FLAG_TIMEOUT``, function will fail after
+  ``timeout`` microseconds if unable to send message.
+
+**phantom_port_read_etc**
+  Get next message from port. Parameters are similar to ``phantom_port_write_etc``.
+
+.. TODO there must be answer channel, answer message must be targeted to
+.. TODO tid or pid - like unix multiplex files, msg recv must give out tid of sender,
+.. TODO but just for port owner
 
 --------------------
 Debugging facilities
