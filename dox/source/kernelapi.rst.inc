@@ -983,6 +983,66 @@ Here is how its done:
 
 This code also shows how to use disk cache subsystem.
 
+
+Disk cache subsystem
+--------------------
+
+Default disk IO cache machinery. Disk IO subsystem does not
+use cache subsystem automatically, you have to add it to your
+code manually. The reason is simple - Phantom persistent memory
+subsystem is itself a huge cache, and does not need separate IO
+cache at all. So adding cache to FS implementation must be done 
+in FS code, not in disk IO code.
+
+.. code:: c
+
+    #include <kernel/disk_cache.h>
+
+    cache_t * cache_init( size_t block_size );
+
+    errno_t cache_get( cache_t *c, long blk, void *data );
+    errno_t cache_get_multiple( cache_t *c, long blk, int nblk, void *data );
+
+    errno_t cache_put( cache_t *c, long blk, const void *data );
+    errno_t cache_put_multiple( cache_t *c, long blk, int nblk, const void *data );
+
+    errno_t cache_set_writeback( cache_t *c, writeback_f_t *func, void *opaque );
+    errno_t cache_flush_all( cache_t *c );
+
+    errno_t cache_destroy( cache_t * );
+
+**cache_init**
+  Create cache of default size for given page (sector) size.
+  Returns cache struct or null on fail (usually out of mem).
+
+**cache_get**
+  Find a cache entry and get data from it, or return ENOENT
+  if corresponding disk block is not in cache.
+
+**cache_get_multiple**
+  Find a cache entry and get data from it, or return ENOENT - multisector.
+
+**cache_put**
+  Place data to cache - find or reuse entry as needed.
+
+**cache_put_multiple**
+  Place data to cache - find or reuse entry as needed - multisector.
+
+**cache_set_writeback**
+  Set function to call if cache needs to write out data from cache
+  to disk.
+
+**cache_flush_all**
+  Make sure all the cached data is written to disk.
+
+.. warning::  
+  It is not guaranteed that cache_flush_all returns after all 
+  outstanding data is surely written to disk.
+
+**cache_destroy**
+  Destroy cache.
+
+
 -------
 Network
 -------
@@ -2127,6 +2187,71 @@ defined by server party.
 .. TODO there must be answer channel, answer message must be targeted to
 .. TODO tid or pid - like unix multiplex files, msg recv must give out tid of sender,
 .. TODO but just for port owner
+
+
+
+------------------------------
+Kernel infrastructure services
+------------------------------
+
+Misc info
+---------
+
+Current architecture and board (hw conf) names.
+
+.. code:: c
+
+    #include <kernel/init.h>
+
+    extern char arch_name[];
+    extern char board_name[];
+
+
+
+Kernel subsystems init and stop
+-------------------------------
+
+Any kernel source file can have own init and stop code. Use following
+macros:
+
+.. code:: c
+
+    #include <kernel/init.h>
+
+    #define INIT_ME(__init1,__init2,__init3)
+    #define STOP_ME(__stop1,__stop2,__stop3)
+
+Usage:
+
+.. code:: c
+
+    static void init_module( void )
+    {
+    ...
+    }
+
+    INIT_ME(0,init_module,0);
+
+Three parameters of ``INIT_ME`` macros are functions (or zero to skip) that
+will be called at different moments.
+
+An ``__init1`` is called very early, most of the kernel services are not
+ready at this moment. Use just for modules that will be needed for later
+starting code. No threads, no mutex/cond/etc, no network, no disks.
+
+An ``__init2`` is called when most of the kernel is working.
+
+An ``__init3`` is called very late. Quite everything is running at this
+moment, object land is available. Use for slow and not critical components
+or additional startup of things that started in basic form before.
+
+Character buffer chains - cbuf
+------------------------------
+
+
+Hash tables - khash
+-------------------
+
 
 --------------------
 Debugging facilities
