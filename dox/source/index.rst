@@ -8,9 +8,9 @@
 The Phantom Operating System
 """"""""""""""""""""""""""""
 
-..........................
-Introduction and Reference
-..........................
+............
+Introduction
+............
 
 .. only:: html
 
@@ -18,11 +18,22 @@ Introduction and Reference
    
    You can get this document in `PDF format`_.
 
-.. _PDF format: https://media.readthedocs.org/pdf/phantom_web/latest/mqtt-udp.pdf
-
+.. _PDF format: https://buildmedia.readthedocs.org/media/pdf/phantomdox/latest/phantomdox.pdf
 
 .. include:: introduction.rst.inc
 
-.. include:: kernelapi.rst.inc
+.................
+Project structure
+.................
+
+.. include:: directories.rst.inc
+
+
+.........
+Reference
+.........
 
 .. include:: userapi.rst.inc
+
+.. include:: kernelapi.rst.inc
+

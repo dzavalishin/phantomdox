@@ -1243,33 +1243,32 @@ FS specific operations on files:
 
     struct uufileops
     {
-        size_t      (*read)(    struct uufile *f, void *dest, size_t bytes);
-        size_t      (*write)(   struct uufile *f, const void *src, size_t bytes);
+        size_t  (*read)(    struct uufile *f, void *dest, size_t bytes);
+        size_t  (*write)(   struct uufile *f, const void *src, size_t bytes);
 
-        errno_t     (*readdir)( struct uufile *f, struct dirent *dirp );
+        errno_t (*readdir)( struct uufile *f, struct dirent *dirp );
 
-        errno_t     (*seek)(    struct uufile *f ); 
+        errno_t (*seek)(    struct uufile *f ); 
 
-        errno_t     (*stat)(    struct uufile *f, struct stat *dest);
-        int         (*ioctl)(   struct uufile *f, errno_t *err, int request, void *data, int dlen );
+        errno_t (*stat)(    struct uufile *f, struct stat *dest);
+        int     (*ioctl)(   struct uufile *f, errno_t *err, int request, void *data, int dlen );
 
-        size_t      (*getpath)( struct uufile *f, void *dest, size_t bytes);
+        size_t  (*getpath)( struct uufile *f, void *dest, size_t bytes);
 
-    // returns -1 for non-files?
-        ssize_t     (*getsize)( struct uufile *f);
-        errno_t     (*setsize)( struct uufile *f, size_t size);
+        ssize_t (*getsize)( struct uufile *f);
+        errno_t (*setsize)( struct uufile *f, size_t size);
 
-        errno_t     (*chmod)( struct uufile *f, int mode);
-        errno_t     (*chown)( struct uufile *f, int user, int grp);
+        errno_t (*chmod)( struct uufile *f, int mode);
+        errno_t (*chown)( struct uufile *f, int user, int grp);
 
-        errno_t     (*unlink)( struct uufile *f );
+        errno_t (*unlink)( struct uufile *f );
 
         errno_t	(*getproperty)( struct uufile *f, const char *pName, char *pValue, size_t vlen );
         errno_t	(*setproperty)( struct uufile *f, const char *pName, const char *pValue );
         errno_t	(*listproperties)( struct uufile *f, int nProperty, char *pValue, size_t vlen );
 
 	// used when clone file
-        void *      (*copyimpl)( void *impl);
+        void *  (*copyimpl)( void *impl);
     };
 
 **read, write**
@@ -1321,6 +1320,61 @@ FS specific operations on files:
 
 This structure is usually shared by all instances of uufile structure
 for given file system. 
+
+There is a ready made directory support structures and code.
+It can be used to keep in-memory directories structure either
+from RAMFS or for some procfs like file system. 
+
+This implemented is quite naive and uses linear lists of 
+directory entries. If used for a big directories can be slow.
+
+.. code:: c
+
+    typedef struct dir_ent
+    {
+        queue_chain_t       chain;
+
+        const char *        name; // malloc'ed
+        int                 flags;
+        uufile_t *          uufile;
+        void *              unused;
+    } dir_ent_t;
+
+    uufile_t *create_dir(void);
+
+    errno_t unlink_dir_name( uufile_t *dir, const char *name );
+    errno_t unlink_dir_ent( uufile_t *dir, uufile_t *deu );
+
+    uufile_t *lookup_dir( uufile_t *dir, const char *name, int create, uufile_t *(*createf)() );
+
+    errno_t get_dir_entry_name( uufile_t *dir, int n, char *name );
+    int common_dir_read(struct uufile *f, void *dest, size_t bytes);
+
+    extern struct uufileops common_dir_fops;
+
+**create_dir**
+  Create uufile with support for directory operations.
+  An ``common_dir_fops`` set of methods will be used.
+  Following operations are also possible.
+
+**unlink_dir_name**
+  Unlink by name. Will delete uufile referenced by directory
+  entry if it was last reference.
+
+**unlink_dir_ent**
+  Unlink by referenced uufile.
+
+**lookup_dir**
+  Find or create directory entry. If entry does not 
+  exist and ``create`` is not zero, ``createf`` will
+  be called to create uufile to be referenced by entry.
+
+**get_dir_entry_name**
+  Return n-th entry's name.
+
+**common_dir_read**
+  General impl of read syscall for directory.
+  Reads records structured as ``struct dirent``.
 
 Disk cache subsystem
 --------------------
@@ -2611,6 +2665,8 @@ some data at end.
 
 Special interface exist to create and free cbufs in interrupt context.
 
+.. code:: c
+
     #include <newos/cbuf.h>
 
     cbuf *cbuf_get_chain(size_t len);
@@ -2667,6 +2723,15 @@ Special interface exist to create and free cbufs in interrupt context.
 
 **cbuf_truncate_head**
   
+**cbuf_truncate_tail**
+
+**cbuf_extend_head**
+
+**cbuf_extend_tail**
+
+
+.. TODO write me
+
 
 Hash tables - khash
 -------------------
