@@ -1292,7 +1292,8 @@ FS specific operations on files:
   Classic Unix ioctl.
 
 **getproperty, setproperty, listproperties**
-  Phantom's extended ioctl. (name=value style)
+  Phantom's extended ioctl, name=value style. 
+  See `Device properties`_ for more info.
 
 .. TODO reference
 
@@ -1556,51 +1557,11 @@ Device descriptor structure:
 Device properties
 -----------------
 
-.. code:: c
 
-    #include <phantom_types.h>
+Here is an usage example for a simplest way to handle 
+properties. 
 
-    typedef enum
-    {
-        pt_int32,
-        pt_mstring,         // malloced string
-        pt_enum32,         	// enum int32 - unimpl!
-    } property_type_t;
-
-    struct property;
-
-    typedef struct properties {
-        const char *          prefix;         // 4-byte char prefix of this group, like 'dev.', 'gen.' or 'fsp.'
-
-        struct property     *list;
-        size_t              lsize;
-
-        void *              (*valp)(struct properties *ps, void *context, size_t offset );
-    } properties_t;
-
-    typedef struct property {
-        property_type_t     type;
-        const char 		*name;
-        size_t              offset;
-        void                *valp;
-
-        char                **val_list; // for enums
-
-        void                (*activate)(struct properties *ps, void *context, size_t offset, void *vp );
-        errno_t             (*setf)(struct properties *ps, void *context, size_t offset, void *vp, const char *val);
-        errno_t             (*getf)(struct properties *ps, void *context, size_t offset, void *vp, char *val, size_t len);
-    } property_t;
-
-
-    errno_t gen_dev_listproperties( struct phantom_device *dev, int nProperty, char *pValue, int vlen );
-    errno_t	gen_dev_getproperty( struct phantom_device *dev, const char *pName, char *pValue, int vlen );
-    errno_t	gen_dev_setproperty( struct phantom_device *dev, const char *pName, const char *pValue );
-
-    errno_t gen_listproperties( properties_t *ps, int nProperty, char *pValue, int vlen );
-    errno_t	gen_getproperty( properties_t *ps, void *context, const char *pName, char *pValue, int vlen );
-    errno_t	gen_setproperty( properties_t *ps, void *context, const char *pName, const char *pValue );
-
-Usage example. Driver init code, set entry points for properties:
+Driver init code, set entry points for properties:
 
 .. code:: c
 
@@ -1657,9 +1618,66 @@ Get value of property:
 
 .. TODO describe other ways to use
 
+There is a set of functions to support more complex implementation of
+properties machinery.
+
+.. TODO include file?
+
+.. code:: c
+
+    typedef enum
+    {
+        pt_int32,
+        pt_mstring,         // malloced string
+        pt_enum32,         	// enum int32 - unimpl!
+    } property_type_t;
+
+    struct property;
+
+    typedef struct properties {
+        const char *          prefix;         // 4-byte char prefix of this group, like 'dev.', 'gen.' or 'fsp.'
+
+        struct property     *list;
+        size_t              lsize;
+
+        void *              (*valp)(struct properties *ps, void *context, size_t offset );
+    } properties_t;
+
+    typedef struct property {
+        property_type_t type;
+        const char      *name;
+        size_t          offset;
+        void            *valp;
+
+        char            **val_list; // for enums
+
+        void            (*activate)(struct properties *ps, void *context, size_t offset, void *vp );
+        errno_t         (*setf)(struct properties *ps, void *context, size_t offset, void *vp, const char *val);
+        errno_t         (*getf)(struct properties *ps, void *context, size_t offset, void *vp, char *val, size_t len);
+    } property_t;
+
+    errno_t gen_dev_listproperties( struct phantom_device *dev, int nProperty, char *pValue, int vlen );
+    errno_t	gen_dev_getproperty( struct phantom_device *dev, const char *pName, char *pValue, int vlen );
+    errno_t	gen_dev_setproperty( struct phantom_device *dev, const char *pName, const char *pValue );
+
+    errno_t gen_listproperties( properties_t *ps, int nProperty, char *pValue, int vlen );
+    errno_t	gen_getproperty( properties_t *ps, void *context, const char *pName, char *pValue, int vlen );
+    errno_t	gen_setproperty( properties_t *ps, void *context, const char *pName, const char *pValue );
+
+To use this properties engine define ``properties_t`` structure
+for a driver, add array of property definitions (``property_t``) and
+use ``gen_dev_listproperties``, ... as an access functions.
+
+Device's ``props`` field must point to ``properties_t`` structure.
+
+.. TODO example!
+
+
 -----------------------
 Video drivers subsystem
 -----------------------
+
+Video drivers provide access to grapchical hardware of the computer.
 
 Video driver
 ------------
