@@ -128,3 +128,51 @@ deplpyment rules, no setup. Just 5-10 lines of code.
 What Phantom OS is going to be - an environment where simple goals can be
 achieved in a simple way.
 
+
+Phantom OS lifecycle
+--------------------
+
+Persistent OS lifecycle is differs a bit from traditional
+OS.
+
+We differentiate between initial OS instance start and
+all of the subsequent kernel starts, which we call 
+*restarts*.
+
+There is also an events in the usual life of the kernel 
+called *snapshots*. These events store consistent image
+of OS userland programs on disk. If kernel will be stopped
+abrupty, the next *restart* will continue executing user
+programs from last successful *snapshot* point.
+
+As long as *snapshot* is being done and is not finished 
+complletely OS keeps previous two snapshots intact. After
+the new snapshot is made the most old one is released.
+
+It means that at any point in time there at least one 
+complete snapshot available on disk. Most of the time
+there are two.
+
+When kernel restarts it is possible to choose if we restart 
+from latest or previous snapshot.
+
+Technically it is possible to keep more snapshots, like, for 
+example, weekly or monthly ones.
+
+In fact, snapshots engine at the same time is incremental
+backup engine.
+
+When Phantom OS instance boots for the first time in its life
+and has no snapshot to continue from, it has to create basic
+initial state. It includes initial set of classes in 
+object land and some initial code running. This code is 
+supposed to set up user environment and bring applications to
+OS instance.
+
+It is similar in some ways to Unix ``init`` process, but 
+``init`` has to set up OS environment at every start of kernel,
+which is not needed in Phantom.
+
+Note that all of that is true for native Phantom OS
+*personality*. There is also POSIX *personality*, 
+which currently is not persistent.

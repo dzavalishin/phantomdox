@@ -37,3 +37,13 @@ Reference
 
 .. include:: kernelapi.rst.inc
 
+
+......................
+Implementation details
+......................
+
+.. include:: vmstruct.rst.inc
+
+.. include:: plcstruct.rst.inc
+
+.. include:: bytecode.rst.inc
