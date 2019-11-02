@@ -309,6 +309,9 @@ After creating pool you can set additional properties.
   This function is, usually, allocates memory and sets up initial values
   for element.
 
+  If init function is not set up for pool, ``arg`` parameter of
+  ``pool_create_el`` is stored in pool as is.
+
 **destroy**
   Called on element destruction. Usually releases related (referenced by
   pool element) resources and deallocates element's memory.
@@ -338,7 +341,7 @@ After creating pool you can set additional properties.
   Tell pool that we do not use poiner to element any more. Decrease element
   count. Element can be destroyed if count becomes zero.
 
-Complex element creation scenario example. Element init function
+Here is a complex element creation scenario example. Element init function
 allocates new element and sets its name from parameter passed to
 ``pool_create_el``. If elemnt gets unused ``f_destroy`` deallocates 
 it.
@@ -374,7 +377,7 @@ it.
 
 
 
-Example of element access code. Caller passes us handle for a strutcure, we 
+Example of element access code. Caller passes us handle for a structure, we 
 extract structure (incrementing its reference count), do an operation and 
 release it, decrementing its reference count. This way we make sure that
 pool element still exists and will exist for the time we access it.
@@ -406,7 +409,11 @@ Iterate through pool elements.
     errno_t pool_foreach( pool_t *pool, 
         errno_t (*ff)(pool_t *pool, void *el, pool_handle_t handle, void *arg), 
         void *arg );
-    errno_t do_pool_forone( pool_t *pool, pool_handle_t handle, errno_t (*ff)(pool_t *pool, void *el, void *arg), void *arg );
+
+    errno_t do_pool_forone( pool_t *pool, 
+        pool_handle_t handle, 
+        errno_t (*ff)(pool_t *pool, void *el, void *arg), 
+        void *arg );
 
 **pool_foreach**
   Call ``ff`` for each element in pool, passing pool pointer, element pointer
@@ -975,6 +982,9 @@ Connecting FS driver
 
 Here is an example of how to connect a file system to kernel.
 
+List of available FS drivers is in fs_map.c file. Each FS is defined
+with name, FS probe function and FS start function.
+
 FS probe entry point is called for each whole disk or partition and
 for each registered FS:
 
@@ -1015,7 +1025,7 @@ for each registered FS:
     return 0;
     }
 
-If we said that it is our partiotion, next entry point will be called by kernel:
+If we said that it is our partition, the next entry point will be called by kernel:
 
 .. code:: c
 
@@ -1081,8 +1091,235 @@ Here is how its done:
         return 0;
     }
 
-This code also shows how to use disk cache subsystem.
+This code also shows how to use disk cache subsystem. See detailed 
+explanation for it in `Disk cache subsystem`_ below.
 
+Now lets find out how to setup file system descriptor to be used by kernel
+to access a file system. The ``uufs`` structure describes instance of file
+system. It has function pointers used to access this instance and pointer to
+implementation specific state.
+
+.. code:: c
+
+    struct uufs
+    {
+        char *              name;
+        void *              impl;
+
+        errno_t             (*open)(struct uufile *, int create, int write);
+        errno_t             (*close)(struct uufile *);
+
+        uufile_t *          (*namei)(struct uufs *fs, const char *filename);
+
+        errno_t             (*symlink)(struct uufs *fs, const char *src, const char *dst);
+        errno_t             (*mkdir)(struct uufs *fs, const char *path);
+
+        uufile_t *          (*root)(struct uufs *fs);
+
+        errno_t             (*dismiss)(struct uufs *fs);
+    };
+
+**impl**
+  Private implementation specific state for this FS instance.
+
+**namei**
+  This function is called for a file name before any access to
+  this file is possible. This function must create ``uufile_t`` 
+  structure which is used by kernel to access file.
+
+**open**
+  This function is used to open or create file. Called for
+  uufile obtained from ``namei`` or ``root``.
+
+**close**
+  File is not will be used any more. FS code can free 
+  associated resources.  
+
+**root**
+  It is an analog of ``namei`` for the root directory of
+  this file system.
+
+**mkdir**
+  Create a directory.
+
+**symlink**
+  Create a symlink.
+
+**dismiss**
+  This file system is not needed any more. Close everything,
+  flush cache and release all resources.
+
+
+.. code:: c
+
+    struct uufile
+    {
+        struct uufileops *  ops;
+        size_t              pos;
+        struct uufs *       fs;
+        unsigned            flags;
+        const char *        name;   // This entry's name, or zero if none
+        void *              impl; // implementation specific
+
+        int                 refcount; // n of refs to this node - TODO!
+        hal_mutex_t         mutex; // serialize access
+    };
+
+    typedef struct uufile uufile_t;
+
+    #define UU_FILE_FLAG_DIR        (1<<0) // Dir
+    #define UU_FILE_FLAG_NET        (1<<1) // Socket
+    #define UU_FILE_FLAG_TCP        (1<<2) // Stream
+    #define UU_FILE_FLAG_UDP        (1<<3) // Dgram
+    #define UU_FILE_FLAG_MNT        (1<<4) // Mount point - FS root
+    #define UU_FILE_FLAG_PIPE       (1<<5) // Pipe
+    #define UU_FILE_FLAG_RDONLY     (1<<6) // Write op forbidden
+
+    //! Is open now, unlink/destroy_uufile will close first
+    #define UU_FILE_FLAG_OPEN       (1<< 8) 
+
+    //! On destroy implementation must be freed
+    #define UU_FILE_FLAG_FREEIMPL   (1<< 9) 
+
+    //! Do not destroy - it's a link to static instance
+    #define UU_FILE_FLAG_NODESTROY  (1<<10) 
+
+This structure describes any accessible node in file system,
+like file, directory, pipe. etc.
+
+.. TODO symlink flag?
+
+**ops**
+  Pointer to a list of entry points for operations wiil file.
+  Note that each file can have its own set of operations.
+  You can have specific ops for directory and regular file, for example.
+
+**pos**
+  Current position in file.
+
+.. TODO if instance is separate for each open?
+
+**fs**
+  Our filesystem instance.
+
+**name**
+  File name.
+
+**impl**
+  Implementation specific private state.
+
+**refcount**
+  Number of references to this instance. 
+
+.. TODO check if used!
+
+**flags**
+  Kind of file and operation modes for it, see defines above.
+
+**mutex**
+  Muex to take when working with this file.
+
+.. TODO rules for mutex - any op or just access to struct?
+
+Basic operations on generic ``uufile_t``:
+
+.. code:: c
+
+    uufile_t *copy_uufile( uufile_t *in );
+    uufile_t *create_uufile(void);
+
+    void set_uufile_name( uufile_t *in, const char *name );
+
+    void link_uufile( uufile_t *in );
+    void unlink_uufile( uufile_t *in );
+
+
+.. TODO write me
+
+
+FS specific operations on files:
+
+.. code:: c
+
+    struct uufileops
+    {
+        size_t      (*read)(    struct uufile *f, void *dest, size_t bytes);
+        size_t      (*write)(   struct uufile *f, const void *src, size_t bytes);
+
+        errno_t     (*readdir)( struct uufile *f, struct dirent *dirp );
+
+        errno_t     (*seek)(    struct uufile *f ); 
+
+        errno_t     (*stat)(    struct uufile *f, struct stat *dest);
+        int         (*ioctl)(   struct uufile *f, errno_t *err, int request, void *data, int dlen );
+
+        size_t      (*getpath)( struct uufile *f, void *dest, size_t bytes);
+
+    // returns -1 for non-files?
+        ssize_t     (*getsize)( struct uufile *f);
+        errno_t     (*setsize)( struct uufile *f, size_t size);
+
+        errno_t     (*chmod)( struct uufile *f, int mode);
+        errno_t     (*chown)( struct uufile *f, int user, int grp);
+
+        errno_t     (*unlink)( struct uufile *f );
+
+        errno_t	(*getproperty)( struct uufile *f, const char *pName, char *pValue, size_t vlen );
+        errno_t	(*setproperty)( struct uufile *f, const char *pName, const char *pValue );
+        errno_t	(*listproperties)( struct uufile *f, int nProperty, char *pValue, size_t vlen );
+
+	// used when clone file
+        void *      (*copyimpl)( void *impl);
+    };
+
+**read, write**
+  Access file data.
+
+**readdir**
+  Access directory contents.
+  Return ENOENT if end of dir reached.
+
+.. TODO details. entry number? .pos?
+
+**seek**
+  Notify fs driver that curr pos (uufile.pos) is changed, ask to validate.
+  If returns nonzero, uufile.pos may be changed again.
+
+**stat**
+  Read file metadata.
+
+**ioctl**
+  Classic Unix ioctl.
+
+**getproperty, setproperty, listproperties**
+  Phantom's extended ioctl. (name=value style)
+
+.. TODO reference
+
+**getpath**
+  Read file path.
+
+.. TODO describe
+
+**getsize, setsize**
+  Read or control file size.
+
+**chmod**
+  Change file access rights, unix-style.
+
+**chown**
+  Change file owner, unix style.
+
+**unlink**
+  Unlink file, delete if it was last link.
+
+**copyimpl**
+  Create another instance of uufile impl part.
+
+.. TODO describe in detail
+
+This structure is usually shared by all instances of uufile structure
+for given file system. 
 
 Disk cache subsystem
 --------------------
