@@ -338,8 +338,108 @@ After creating pool you can set additional properties.
   Tell pool that we do not use poiner to element any more. Decrease element
   count. Element can be destroyed if count becomes zero.
 
-.. TODO need example
+Complex element creation scenario example. Element init function
+allocates new element and sets its name from parameter passed to
+``pool_create_el``. If elemnt gets unused ``f_destroy`` deallocates 
+it.
 
+.. code:: c
+
+    struct pe {
+       char *name;
+    };
+
+    void *f_init( void *arg )
+    {
+        struct pe *new_el = malloc( sizeof(struct pe) );
+        new_el->name = strdup( arg );
+    }
+
+    void f_destroy( void *pool_el )
+    {
+        struct pe *el = pool_el;
+        free( pe->name );
+        free( pe ); 
+    }
+
+    ...
+    pool = create_pool();
+    pool->flag_autoclean = 1;
+    pool->flag_autodestroy = 1;
+    pool->init = f_init;
+    pool->destroy = f_destroy;
+    ...
+
+    pool_handle_t h = pool_create_el( pool, "new element name" );
+
+
+
+Example of element access code. Caller passes us handle for a strutcure, we 
+extract structure (incrementing its reference count), do an operation and 
+release it, decrementing its reference count. This way we make sure that
+pool element still exists and will exist for the time we access it.
+
+.. code:: c
+
+    void w_control_set_visible( window_handle_t w, control_handle_t ch, int visible )
+    {
+        control_t *cc = pool_get_el( w->controls, ch );  
+        if( !cc )
+        {                                                     
+            LOG_ERROR0( 1, "can't get control" );             
+            return;                                           
+        }                                                     
+
+        cc->flags |= CONTROL_FLAG_DISABLED;
+        if( visible ) cc->flags &= ~CONTROL_FLAG_DISABLED;    
+
+        w_paint_control( w, cc );
+
+        pool_release_el( w->controls, ch );
+    }
+
+
+Iterate through pool elements.
+
+.. code:: c
+
+    errno_t pool_foreach( pool_t *pool, 
+        errno_t (*ff)(pool_t *pool, void *el, pool_handle_t handle, void *arg), 
+        void *arg );
+    errno_t do_pool_forone( pool_t *pool, pool_handle_t handle, errno_t (*ff)(pool_t *pool, void *el, void *arg), void *arg );
+
+**pool_foreach**
+  Call ``ff`` for each element in pool, passing pool pointer, element pointer
+  element handle and passed ``arg``. Pool element refcount is incremented for
+  the time ``ff`` is called and decremented after. If refcount becomes zero element
+  is deleted. 
+
+  If ``ff`` returns not zero, ``pool_foreach`` stops
+  and returns the same value.
+
+**do_pool_forone**
+  Similar to ``pool_foreach``, can be used to call ``ff`` just for one element.
+  Does not destroy pool el in any case, even if refcount becomes zero.
+
+Code example:
+
+.. code:: c
+
+    static errno_t do_paint_changed_control(pool_t *pool, void *el, pool_handle_t handle, void *arg)
+    {
+        control_t *cc = el;
+        struct foreach_control_param *env = arg;
+        paint_changed_control( env->w, cc);
+        return 0;
+    }
+
+    void w_paint_changed_controls(window_handle_t w)
+    {
+        struct foreach_control_param env;
+        env.w = w;
+
+        pool_foreach( w->controls, do_paint_changed_control, &env );
+    }
 
 ----------
 Interrupts
@@ -2245,9 +2345,73 @@ An ``__init3`` is called very late. Quite everything is running at this
 moment, object land is available. Use for slow and not critical components
 or additional startup of things that started in basic form before.
 
-Character buffer chains - cbuf
-------------------------------
+Chained buffers - cbuf
+----------------------
 
+Can be used to carry data of unknown length between kernel modules.
+Widely used in network stack. There are tools to concatenate cbufs,
+cut off data at front or at tail, such as protocol headers and sufixes.
+Cbufs can also be extended at start or end to add protocol headers or
+some data at end.
+
+Special interface exist to create and free cbufs in interrupt context.
+
+    #include <newos/cbuf.h>
+
+    cbuf *cbuf_get_chain(size_t len);
+    void cbuf_free_chain(cbuf *buf);
+
+    cbuf *cbuf_get_chain_noblock(size_t len);
+    void cbuf_free_chain_noblock(cbuf *buf);
+
+    size_t cbuf_get_len(cbuf *buf);
+    int cbuf_is_contig_region(cbuf *buf, size_t start, size_t end);
+    void *cbuf_get_ptr(cbuf *buf, size_t offset);
+
+    int cbuf_memcpy_to_chain(cbuf *chain, size_t offset, const void *_src, size_t len);
+    int cbuf_memcpy_from_chain(void *dest, cbuf *chain, size_t offset, size_t len);
+
+    cbuf *cbuf_merge_chains(cbuf *chain1, cbuf *chain2);
+    cbuf *cbuf_duplicate_chain(cbuf *chain, size_t offset, size_t len, size_t leading_space);
+
+    cbuf *cbuf_truncate_head(cbuf *chain, size_t trunc_bytes, bool free_unused);
+    int cbuf_truncate_tail(cbuf *chain, size_t trunc_bytes, bool free_unused);
+
+    int cbuf_extend_head(cbuf **chain, size_t extend_bytes);
+    int cbuf_extend_tail(cbuf *chain, size_t extend_bytes);
+
+**cbuf_get_chain, cbuf_get_chain_noblock**
+  Get chain of given size. Noblock version can be used in interrupt.
+
+**cbuf_free_chain, cbuf_free_chain_noblock**
+  Release chain that is not needed any more.
+
+**cbuf_get_len**
+  Find number of bytes stored in chain.
+
+**cbuf_is_contig_region**
+  Check if some region of stored data is in one chain buffer,
+  and is not broken in parts.
+
+**cbuf_get_ptr**
+  Get pointer to specific part of buffer. Make sure that 
+  part you need is in one chain buffer with ``cbuf_is_contig_region``.
+
+**cbuf_memcpy_to_chain**
+  Copy from source buffer to chain. Given ``offset`` is starting position in 
+  chain to copy to.
+
+**cbuf_memcpy_from_chain**
+  Copy from ``offsset`` position in chain to destination buffer.
+
+**cbuf_merge_chains**
+  Build new chain by concatenation of two given chains.
+
+**cbuf_duplicate_chain**  
+  Create a copy of chain.
+
+**cbuf_truncate_head**
+  
 
 Hash tables - khash
 -------------------
@@ -2294,12 +2458,12 @@ structure pointers.
   Hash function should calculate hash on either e or key,
   depending on which one is not NULL.
 
-  unsigned int hash_func(void *e, const void *key, unsigned int range);
+  ``unsigned int hash_func(void *e, const void *key, unsigned int range);``
 
   Compare function should compare the element with the key, returning 0 
   if equal, other if not.
 
-  int compare_func(void *e, const void *key);
+  ``int compare_func(void *e, const void *key);``
 
 .. note::
   Compare func can be null, in which case the hash
@@ -2391,6 +2555,22 @@ Iterate through hash items:
     }
 
 
+**hash_hash_str**
+  Default function to calculate hash value for strings.
+
+Example of hash function for hashing by string:
+
+.. code:: c
+
+    static unsigned int if_hash_func(void *_i, 
+        const void *_key, unsigned int range)
+    {
+        struct named_object *i = _i;
+        const char *name = _key;
+
+        if(i) return (hash_hash_str( i->name ) % range);
+        else  return (hash_hash_str( name ) % range);
+    }
 
 
 --------------------
