@@ -19,6 +19,8 @@ which executes Phantom bytecode. Main components of VM are:
 Main code execution loop
 ------------------------
 
+.. index:: single: bytecode
+
 Heart of VM. Reads and executes bytecode instrutctions.
 
 
@@ -81,6 +83,8 @@ state on kernel restart.
 
 Syscall restart engine
 ----------------------
+
+.. index:: single: restart
 
 Blocking or just long running calls from VM code to
 kernel can not survive snapshot and restart and arranged 

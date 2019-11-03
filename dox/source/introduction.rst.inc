@@ -132,6 +132,10 @@ achieved in a simple way.
 Phantom OS lifecycle
 --------------------
 
+.. index:: single: snapshot
+.. index:: single: restart
+
+
 Persistent OS lifecycle is differs a bit from traditional
 OS.
 

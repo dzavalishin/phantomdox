@@ -2,6 +2,8 @@
 Byte Code Reference
 ===================
 
+.. index:: single: bytecode
+
 This section contains a list of all virtual machine bytecode 
 operations implemented now.
 
@@ -95,6 +97,8 @@ will be on the object stack.
 static_invoke
 -------------
 
+.. index:: single: static_invoke
+
 ``static_invoke methodIndex numberOfArgs``
 
 Pops ``numberOfArgs`` arguments from object stack, than pops object 
@@ -103,26 +107,50 @@ to call method for, then pops class to call method in. Class is
  
 This instruction is supposed to be used for constructor calls.
 
+
+dynamic_invoke
+--------------
+
+.. index:: single: dynamic_invoke
+
+.. code::
+
+    const «arg val»;
+    const «arg val»;
+    const 2; // 2 args
+    // here must be code to bring this object on stack
+    const «toString»;
+    dynamic_invoke;
+
+Dynamically invoke method by name.
+
+
+
 sys
 ---
+
+.. index:: single: sys
+.. index:: single: syscall
+.. index:: single: internal
+
 
 ``sys syscall_number``
 
 Executes this object’s embedded method. 
-Object must be of internal class.
+Object must be of internal class. (See `Internal classes`_ section)
 
 .. TODO ref to internal classes & index
 
-Nothing can be guaranteed about sys. As for now all of them return 
+Nothing can be guaranteed about ``sys``. As for now all of them return 
 something, but it is not enforced by interpreter. Though, for normal 
-operation sys must return some object or throw an exception.
+operation ``sys`` must return some object or throw an exception.
 
 Actual implementation uses for ``sys`` the same calling convention as for
 regular methods.
 
 .. sidebar:: Sys is not call
 
-  It is possible to pass parameters to sys on int stack and receive some 
+  It is possible to pass parameters to ``sys`` on int stack and receive some 
   return there as well, which is differs from ``call``, which passes 
   data on object stack only. That is so because ``sys`` does not create 
   a call frame and thus all the current stack data is available to its code.
@@ -136,21 +164,6 @@ implementing ``sys`` must be running between
 ``vm_unlock_persistent_memory()`` and ``vm_lock_persistent_memory()`` calls.
 
 .. TODO wiki ref? See also[[BlockingSyscalls]]
-
-
-dynamic_invoke
---------------
-
-.. code::
-
-    const «arg val»;
-    const «arg val»;
-    const 2; // 2 args
-    // here must be code to bring this object on stack
-    const «toString»;
-    dynamic_invoke;
-
-Dynamically invoke method by name.
 
 
 
@@ -286,6 +299,9 @@ but supposed to be more widely used.
 -----------------------
 Getting special objects
 -----------------------
+
+.. index:: single: summon
+
 
 summon this
 -----------
@@ -448,6 +464,13 @@ Shift right unsigned. Fills with 0.
 Exceptions
 ----------
 
+.. index:: single: exception
+
+Phantom virtual machine supports quite classic set of exception
+handling operations. Exception throw instruction accepts any object to 
+be thrown. Catcher is waiting for object of given class or any of its 
+subclasses.
+
 push catcher
 ------------
 
@@ -480,6 +503,8 @@ will be automatically popped on return.
 
 throw
 -----
+
+.. index:: single: throw
 
 .. code::
 
@@ -555,6 +580,8 @@ No constructor called automatically. Compiler must generate code to call constru
 
 cast
 ----
+
+.. index:: single: cast
 
 .. code::
 

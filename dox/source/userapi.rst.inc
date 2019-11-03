@@ -16,8 +16,11 @@ handy wrappers from ``.phantom`` package.
 Package .internal
 -----------------
 
+
 .internal.string
 ----------------
+
+.. index:: single: .internal.string
 
 It is just the same as any string constant in user program.
 You can use it's methods with string constant:
@@ -58,6 +61,8 @@ and will be renamed accordingly.
 .internal.binary
 ----------------
 
+.. index:: single: .internal.binary
+
 Binary data buffer.
 
 .. code:: java
@@ -68,6 +73,8 @@ Binary data buffer.
 
 .internal.bitmap
 ----------------
+
+.. index:: single: .internal.bitmap
 
 Graphical image. Used for painting backgrounds and icons in UI code.
 
@@ -96,11 +103,15 @@ Phantom's persistence then keeps contents of bitmap object as long as you need i
 .internal.bootstrap
 -------------------
 
+.. index:: single: .internal.bootstrap
+
 This class is used only during OS initialization and is not to be used by 
 application code.
 
 .internal.class
 ---------------
+
+.. index:: single: .internal.class
 
 Note that ``class`` is reserved word in Phantom language, so if you have
 to refer to class class, it is done like this: ``.internal."class"``.
@@ -112,6 +123,8 @@ type.
 
 .internal.cond
 --------------
+
+.. index:: single: .internal.cond
 
 Cond syncronization primitive.
 
@@ -128,6 +141,8 @@ signal - wake up one waiting thread.
 
 .internal.mutex
 ---------------
+
+.. index:: single: .internal.mutex
 
 Mutex synchronization primitive. Take or release mutex.
 
@@ -146,6 +161,8 @@ Mutex synchronization primitive. Take or release mutex.
 .internal.directory
 -------------------
 
+.. index:: single: .internal.directory
+
 Hash map.
 
 .. code:: java
@@ -161,6 +178,12 @@ Hash map.
 Numeric classes
 ---------------
 
+.. index:: single: .internal.int
+.. index:: single: .internal.long
+.. index:: single: .internal.float
+.. index:: single: .internal.double
+
+
 Classes ``.internal.int``, ``.internal.long``, ``.internal.float`` and ``.internal.double``
 represent numeric types.
 
@@ -168,6 +191,8 @@ The only notable method now is ``toString()``.
 
 .internal.io
 ------------
+
+.. index:: single: .internal.io
 
 Represents file/device access.
 
@@ -186,6 +211,8 @@ Represents file/device access.
 
 .internal.stat
 --------------
+
+.. index:: single: .internal.stat
 
 Access kernel statistics. ``getStat()`` returns statistics information,
 first arg is counter number and second is kind of statistics counter value.
@@ -215,6 +242,8 @@ reboots done and snapshots made.
 .internal.tcp
 -------------
 
+.. index:: single: .internal.tcp
+
 This class will provide access to TCP protocol.
 Currently it can be used to execute HTTP connection and get a result.
 
@@ -229,6 +258,8 @@ Currently it can be used to execute HTTP connection and get a result.
 
 .internal.thread
 ----------------
+
+.. index:: single: .internal.thread
 
 Internal representation of thread. User code is not supposed to
 create objects of this type. It is possible but meaningless. Though
@@ -271,6 +302,8 @@ it is possible to access such an object for own (current) thread.
 .internal.time
 --------------
 
+.. index:: single: .internal.time
+
 Time related kernel services.
 
 .. code:: java
@@ -290,6 +323,8 @@ Time related kernel services.
 .internal.udp
 -------------
 
+.. index:: single: .internal.udp
+
 UDP protocol. Port numbers and IP addresses are in host byte order (usual integers).
 
 .. code:: java
@@ -306,6 +341,8 @@ UDP protocol. Port numbers and IP addresses are in host byte order (usual intege
 
 .internal.window
 ----------------
+
+.. index:: single: .internal.window
 
 Access GUI subsystem.
 
@@ -358,6 +395,8 @@ Access GUI subsystem.
 .internal.world
 ---------------
 
+.. index:: single: .internal.world
+
 Access misc OS services which can't be accessed through ``.internal`` classes.
 
 .. code:: java
@@ -392,6 +431,8 @@ nevertheless provide basic OS functions too.
 
 .phantom.application
 --------------------
+
+.. index:: single: .phantom.application
 
 This is a base class for Phantom OS application program. Instances of this class
 are application instances - documents, for example.
@@ -429,6 +470,8 @@ are application instances - documents, for example.
 .phantom.runnable
 -----------------
 
+.. index:: single: .phantom.runnable
+
 Abstract base class for various callbacks and code that can be
 run in a thread.
 
@@ -446,6 +489,8 @@ run in a thread.
 
 .phantom.environment
 --------------------
+
+.. index:: single: .phantom.environment
 
 Similar to Uinx process environment - ``key=value`` settings storage.
 Currently not really used.

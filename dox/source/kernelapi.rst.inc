@@ -18,6 +18,9 @@ Sync primitives:
 Spinlocks
 ---------
 
+.. index:: single: spinlock
+
+.. index:: single: hal_spinlock_t
 
 .. code:: c
 
@@ -59,6 +62,8 @@ of spinlock and is dedicated to use with bytecode virtual machine.
 Mutex
 -----
 
+.. index:: single: mutex
+
 .. code:: c
 
     #include <kernel/mutex.h>
@@ -80,6 +85,8 @@ Mutex
 
 Cond
 ----
+
+.. index:: single: cond
 
 .. code:: c
 
@@ -148,6 +155,8 @@ Kernel allocators:
 Physical memory allocator
 -------------------------
 
+.. index:: single: RAM
+
 Allocate and free physical computer memory. Allocation unit is page (usually
 4094 bytes). Physical memory is usually quite limited resource, don't waste it.
 
@@ -156,6 +165,8 @@ Allocate and free physical computer memory. Allocation unit is page (usually
   address space and can not be accessed just after being allocated. You
   need to map it to some address in virtual address space, or use for 
   physical IO. 
+
+.. index:: single: physaddr_t
 
 .. code:: c
 
@@ -212,6 +223,10 @@ virtual address space. You can call these functions just for address
 space allocated with ``hal_alloc_vaddress``, other parts of address 
 space are conrolled by kernel in a special way.
 
+.. index:: single: physaddr_t
+.. index:: single: page_mapped_t
+.. index:: single: page_access_t
+
 .. code:: c
 
     void hal_page_control( physaddr_t pa, void *va, page_mapped_t mapped, page_access_t access );
@@ -256,12 +271,18 @@ Set of fuctions helps to do it easily.
 Kernel heap
 -----------
 
+.. index:: single: heap
+
 Not much to say, use classic ``malloc``, ``calloc`` and ``free`` functions
 as usual. Note that size of heap is fixed and you can easily run out of it.
 Use ``hal_pv_alloc`` if you need a lot of memory.
 
 Pools
 -----
+
+.. index:: single: pool
+.. index:: single: pool_t
+.. index:: single: pool_handle_t
 
 Aside from allocators, but used together is pools subsystem. Pool is an
 engine which can keep data structures (referred as *elements*) of one type inside. 
@@ -452,6 +473,8 @@ Code example:
 Interrupts
 ----------
 
+.. index:: single: interrupt
+
 Hardware interrupts
 -------------------
 
@@ -520,6 +543,8 @@ Polled timeouts
 
 These functions can be used to check if given time is passed.
 
+.. index:: single: polled_timeout_t
+
 .. code:: c
 
     typedef bigtime_t polled_timeout_t;
@@ -543,6 +568,10 @@ These functions can be used to check if given time is passed.
 
 Main system timer
 -----------------
+
+.. index:: single: time
+.. index:: single: bigtime_t
+.. index:: single: time_t
 
 .. code:: c
 
@@ -589,6 +618,10 @@ In-interrupt timer calls
 
 It is possible to call some callback after a given time
 right from a timer interrupt. Should be used very carefuly.
+
+.. index:: single: timedcall_t
+.. index:: single: timedcall_func_t
+.. TODO it must be runnable_t in fact
 
 .. code:: c
 
@@ -654,6 +687,8 @@ context to be done after a given time. Such a callback
 should not take long for it will prevent other callbacks
 to be executed.
 
+.. TODO func must be riunnable_t
+
 .. code:: c
 
     #include <kernel/net_timer.h>
@@ -673,6 +708,10 @@ to be executed.
 Threads
 -------
 
+.. index:: single: thread
+.. index:: single: tid_t
+.. index:: single: phantom_thread_t
+
 Phantom kernel supports kernel multithreading and quite
 powerful multitasking features in general.
 
@@ -687,6 +726,9 @@ powerful multitasking features in general.
 
 Thread properties
 -----------------
+
+.. index:: single: wtty
+.. index:: single: ctty
 
 .. code:: c
 
@@ -756,12 +798,17 @@ The only flag that can be set with t_add_flags/t_remove_flags is
 DPC: Thread pools
 -----------------
 
+.. index:: single: DPC
+.. index:: single: dpc_request
+
 DPC (Deferred Procedure Call) requests are supposed to be used in interrupts 
 handlers to offload long part of interrpt processing to thread and not to 
 keep seprate thread for every function of every driver.
 
 DPC subsystem keeps pool of threads used to handle requests, and adds threads
 to pool if all of existing threads are used.
+
+.. TODO must call runnable_t
 
 .. code:: c
 
@@ -808,6 +855,10 @@ Classic thread pool subsystem - can not be triggered from interrupt.
 -------
 Disk IO
 -------
+
+.. index:: single: disk
+.. index:: single: pager_io_request
+
 
 Low level disk IO subsystem is targeted mostly to support paging 
 function as main Phantom IO subsystem is persistent memory.
@@ -863,6 +914,10 @@ To be described.
 
 Disk registration
 -----------------
+
+.. index:: single: phantom_disk_partition_t
+.. index:: single: phantom_device_t
+
 
 Here is an example of disk driver entry point and registering
 a new disk in the system.
@@ -1059,6 +1114,9 @@ creates uufs_t file system descriptor, and mounts new file system. Note that
 given in partition access structure ``p`` is stored in ``fs->dev`` so that FS
 can access its disk partition.
 
+.. index:: single: cache
+.. index:: single: cache_t
+
 Here is how its done:
 
 .. code:: c
@@ -1098,6 +1156,8 @@ Now lets find out how to setup file system descriptor to be used by kernel
 to access a file system. The ``uufs`` structure describes instance of file
 system. It has function pointers used to access this instance and pointer to
 implementation specific state.
+
+.. index:: single: uufs_t
 
 .. code:: c
 
@@ -1149,6 +1209,7 @@ implementation specific state.
   This file system is not needed any more. Close everything,
   flush cache and release all resources.
 
+.. index:: single: uufile_t
 
 .. code:: c
 
@@ -1239,6 +1300,8 @@ Basic operations on generic ``uufile_t``:
 
 FS specific operations on files:
 
+.. index:: single: uufileops
+
 .. code:: c
 
     struct uufileops
@@ -1328,6 +1391,8 @@ from RAMFS or for some procfs like file system.
 This implemented is quite naive and uses linear lists of 
 directory entries. If used for a big directories can be slow.
 
+.. index:: single: dir_ent_t
+
 .. code:: c
 
     typedef struct dir_ent
@@ -1378,6 +1443,9 @@ directory entries. If used for a big directories can be slow.
 
 Disk cache subsystem
 --------------------
+
+.. index:: single: cache_t
+
 
 Default disk IO cache machinery. Disk IO subsystem does not
 use cache subsystem automatically, you have to add it to your
@@ -1444,6 +1512,12 @@ Phantom has classical TCP/IP netwrok stack.
 Interfaces
 ----------
 
+.. index:: single: ifnet
+.. index:: single: MAC
+.. index:: single: DHCP
+
+
+
 This chapter describes how to connect new network driver to a
 network interface.
 
@@ -1499,6 +1573,10 @@ Driver entry points for network IO:
 ----------------------
 Main drivers subsystem
 ----------------------
+
+.. index:: single: phantom_device_t
+.. index:: single: phantom_dev_ops
+
 
 These are structures that represent a driver. Just fields that are of
 use for a driver are shown, there are more fields, but most of them are
@@ -1611,6 +1689,8 @@ Device descriptor structure:
 Device properties
 -----------------
 
+.. index:: single: properties
+
 
 Here is an usage example for a simplest way to handle 
 properties. 
@@ -1677,6 +1757,10 @@ properties machinery.
 
 .. TODO include file?
 
+.. index:: single: properties_t
+.. index:: single: property_t
+.. index:: single: property_type_t
+
 .. code:: c
 
     typedef enum
@@ -1726,10 +1810,16 @@ Device's ``props`` field must point to ``properties_t`` structure.
 
 .. TODO example!
 
+.. TODO PCI driver startup
+
 
 -----------------------
 Video drivers subsystem
 -----------------------
+
+.. index:: single: drv_video_screen_t
+.. index:: single: VESA
+
 
 Video drivers provide access to grapchical hardware of the computer.
 
@@ -1841,6 +1931,8 @@ on VESA or some other video driver to set up video mode
 and access to frame buffer, but can provide accelerated 
 functions.
 
+.. index:: single: mouse
+
 Entry points:
 
 **mouse_set_cursor**
@@ -1874,6 +1966,8 @@ Phantom graphical subsystem is built in 4 layers:
 
 Windows
 -------
+
+.. index:: single: window_handle_t
 
 .. code:: c
 
@@ -1939,6 +2033,8 @@ Simple example of using windows:
 
 Events
 ------
+
+.. index:: single: ui_event_t
 
 Events are messages sent to window system requesting update its state.
 Most of events are processed by window system itself. Some event
@@ -2108,6 +2204,9 @@ Functions to send events
 How to process events in kernel code
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. index:: single: inKernelEventProcess
+
+
 There is a function pointer in window structure which
 points to the function called to process events for this window.
 
@@ -2132,6 +2231,8 @@ project GitHub if you need specific keymap.
 
 Controls
 --------
+
+.. index:: single: control_handle_t
 
 Control is graphical elemen attached to window and processing user input.
 
@@ -2278,6 +2379,8 @@ Fonts
 
 Phantom graphics subsystem supports bitmap and TrueType fonts.
 
+.. index:: single: drv_video_font_t
+
 .. code:: c
 
     #incude <video/font.h>
@@ -2323,6 +2426,8 @@ Window functions to work with bitmap fonts:
   Paint string processing TTY control chars:
   \\n, \\r, some of ANSI control sequences (text color).
   Update given coordinates.
+
+.. index:: single: font_handle_t
 
 Truetype fonts support lets caller choose font style and size and provides
 painting and size request functions.
@@ -2414,6 +2519,9 @@ There are UTF-32 versions of these functions exist, see header file.
 UTF-8 and UTF-32
 ----------------
 
+.. index:: single: UTF-8
+.. index:: single: UTF-32
+
 Main string encoding in Phantom is UTF-8. But there 
 are parts of system (namely - keyboard driver) that 
 expect UTF-32 encoding.
@@ -2423,6 +2531,8 @@ Conversion is supported, of course.
 
 Rectangle algebra
 -----------------
+
+.. index:: single: rect_t
 
 There is a set of functions to work with window/image coordinates.
 
@@ -2483,6 +2593,8 @@ They are based on a rect_t rectangle descriptor:
 Persistent virtual memory
 -------------------------
 
+.. index:: single: snapshot
+
 This is the core of native Phantom personality.
 
 
@@ -2503,6 +2615,7 @@ snapshot is going on no thread can access this memory.
 
 There are two functions that are used to interlock access to persistent memory.
 
+.. index:: single: vm_lock_persistent_memory
 
 .. code:: c
 
@@ -2563,6 +2676,8 @@ internal classes.
 Objects as they look from C
 ---------------------------
 
+.. index:: single: pvm_object_t
+
 From the kernel point of view PVM object is just a structure with an array or 
 structure at the end. If it is a regular object, it's data part is array of 
 pointers to other objects. If it is of internal class, object contents is a 
@@ -2617,6 +2732,7 @@ structure of some type.
 
 There are numerous functions to access objects in different ways.  
 
+.. index:: single: pvm_create_object
 
 .. code:: c
 
@@ -2714,6 +2830,8 @@ Debugging and printing.
 Running PVM code
 ----------------
 
+.. index:: single: .phantom.runnable
+
 Run new VM instance in a new thread. An ``object`` parameter must be 
 of ``.phantom.runnable`` class. 
 
@@ -2740,6 +2858,8 @@ File IO
 
 BeOS ports
 ----------
+
+.. index:: single: port_id
 
 This is not POSIX, but is more or less meaningless without POSIX.
 Ports is a microkernel style gear that can be used to write server
@@ -2822,6 +2942,10 @@ Kernel infrastructure services
 Misc info
 ---------
 
+.. index:: single: arch_name
+.. index:: single: board_name
+
+
 Current architecture and board (hw conf) names.
 
 .. code:: c
@@ -2835,6 +2959,10 @@ Current architecture and board (hw conf) names.
 
 Kernel subsystems init and stop
 -------------------------------
+
+.. index:: single: INIT_ME
+.. index:: single: STOP_ME
+
 
 Any kernel source file can have own init and stop code. Use following
 macros:
@@ -2872,6 +3000,8 @@ or additional startup of things that started in basic form before.
 
 Chained buffers - cbuf
 ----------------------
+
+.. index:: single: cbuf
 
 Can be used to carry data of unknown length between kernel modules.
 Widely used in network stack. There are tools to concatenate cbufs,
@@ -2951,6 +3081,10 @@ Special interface exist to create and free cbufs in interrupt context.
 
 Hash tables - khash
 -------------------
+
+.. index:: single: khash
+.. index:: single: hash_table
+
 
 Kernel hash tables are used everywhare around to map 
 keys (like names or ports, or IP addressed) to handles or 
@@ -3116,6 +3250,10 @@ Debugging facilities
 
 Logging
 -------
+
+.. index:: single: LOG
+.. index:: single: SHOW
+
 
 .. code:: c
 
