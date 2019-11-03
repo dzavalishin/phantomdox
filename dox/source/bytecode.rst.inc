@@ -2,7 +2,8 @@
 Byte Code Reference
 ===================
 
-
+This section contains a list of all virtual machine bytecode 
+operations implemented now.
 
 
 ------------
@@ -120,6 +121,7 @@ Actual implementation uses for ``sys`` the same calling convention as for
 regular methods.
 
 ..sidebar:: Sys is not call
+
   It is possible to pass parameters to sys on int stack and receive some 
   return there as well, which is differs from ``call``, which passes 
   data on object stack only. That is so because ``sys`` does not create 

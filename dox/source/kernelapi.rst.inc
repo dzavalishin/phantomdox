@@ -1913,6 +1913,200 @@ Windows
     void    w_set_visible( window_handle_t h, int v );
     void    w_set_bg_color( window_handle_t w, rgba_t color );
 
+Events
+------
+
+Events are messages sent to window system requesting update its state.
+Most of events are processed by window system itself. Some event
+are supposed to be processed by window owning code.
+
+.. code:: c
+
+    #include <event.h>
+
+    struct ui_event
+    {
+        queue_chain_t               echain; // on q
+
+        int                         type; // UI_EVENT_TYPE_
+        int                         extra; // used for button event - button id
+
+        time_t                      time;
+
+        int                         abs_x;
+        int                         abs_y;
+        int                         abs_z; // z of clicked win
+
+        int                         rel_x;
+        int                         rel_y;
+        int                         rel_z;
+
+        struct drv_video_window *   focus; // Target window
+
+    // Shift, alt, etc - actual for key and mouse events
+        int                         modifiers;
+
+        union {
+
+            struct {
+                int                 vk;     // key code
+                int                 ch;     // unicode char
+            } k;
+
+            struct {
+                int                 buttons;        // Bits correspond to mouse buttons
+                int                 clicked;        // Bits correspond to mouse buttons clicked this time
+                int                 released;       // Bits correspond to mouse buttons released this time
+            } m;
+
+            // WIN and GLOBAL events
+            struct {
+                int                 info;           // UI_EVENT_WIN_
+                rect_t              rect;           // If relevant...
+                rect_t              rect2;          // If relevant...
+                //rgba_t              color;          // For fill op
+            } w;
+        };
+    };
+
+    typedef struct ui_event ui_event_t;
+
+There are four types of events:
+
+* UI_EVENT_TYPE_MOUSE - Mouse move, click or release
+* UI_EVENT_TYPE_KEY - Key press or release. Fields specific for key 
+  events grouped in ``k`` part of union.
+* UI_EVENT_TYPE_WIN - Window state change request. Relevant fields
+  are in the ``w`` part of union.
+* UI_EVENT_TYPE_GLOBAL -  Global events are usually converted to multiple WIN events.
+  Specific data is in the ``w`` part.
+  
+Following fileds are possibly used with any type of event.
+
+* ``time`` - event creation time.
+* ``abs_x``, ``abs_y``, ``abs_z`` - absolute (screen) coordinates, associated with 
+  event. 
+* ``rel_x``, ``rel_y``, ``rel_z`` - relative (window) coordinates, associated with 
+  event. 
+* ``modifiers`` - shift/alt/ctrl/etc modifiers actual for both mouse and key events.
+* ``focus`` - target window for this event.
+* ``extra`` - additional information or event. If event is related to the control
+  (like button or menu titem), control *id* is placed here.
+
+If ``type`` equals ``UI_EVENT_TYPE_MOUSE``, this is a mouse event. Following
+parameters are relevant in this case:
+
+* ``buttons`` - each bit corresponds to mouse button pressed or released. Bit 
+  masks ``UI_MOUSE_BTN_LEFT``, ``UI_MOUSE_BTN_RIGHT`` and ``UI_MOUSE_BTN_MIDDLE`` 
+  can be used to check for mouse button pressed state.
+* ``clicked`` - bits are set just for mouse click (transition to pressed state).
+* ``released`` - bits are set just for release.
+
+If ``buttons`` == 0 then event is mouse hover. If ``clicked`` and ``released`` are zero but
+``buttons`` is not - it is a drag event.
+
+
+If ``type`` equals ``UI_EVENT_TYPE_KEY``, this is a keyboard event. Information 
+about the key that is changed is in ``k.ch`` field. Thid field contains printable
+character or functional key code. Key codes for functional keys are defined 
+in ``compat/uos/keyboard.h``. You can check for key to be functional with
+ ``KEY_IS_FUNC(k.ch)`` macros.
+
+Note that there are key events for both key press and release. Differ release
+from press by ``modifiers`` field, which will have ``UI_MODIFIER_KEYUP`` bit set
+for release event. See ``event.h`` for other modifiers. Most useful ones are
+``UI_MODIFIER_SHIFT``, ``UI_MODIFIER_CTRL`` and ``UI_MODIFIER_ALT``.
+
+There are macros to test ``modifiers`` state for usual cases.
+
+* ``UI_MOD_DOWN()`` - Key is down and no control/alt/shift is pressed
+* ``UI_MOD_CTRL_DOWN()`` - Key is down and just control is pressed
+* ``UI_MOD_ALT_DOWN()`` - Key is down and just alt is pressed
+
+
+If ``type`` equals ``UI_EVENT_TYPE_WIN``, this is a window event. 
+
+Window events are mostly internal windows system machinery events,
+but sometimes must be generated or processed by user code.
+
+* ``UI_EVENT_WIN_GOT_FOCUS`` - sent to window that just became focused.           
+* ``UI_EVENT_WIN_LOST_FOCUS`` - sent to window that just lost focus.
+* ``UI_EVENT_WIN_DESTROYED`` - sent to window that is being destroyed.
+* ``UI_EVENT_WIN_REDECORATE`` - internal machinery event, causes window
+  decorations (title, borders) to be repaint.  
+* ``UI_EVENT_WIN_REPAINT`` - internal machinery event, sent to request 
+  window to be repaint.
+* ``UI_EVENT_WIN_BUTTON_ON`` - state of the control added to this window is changed.
+  New state is *ON*.  
+* ``UI_EVENT_WIN_BUTTON_OFF`` - state of the control added to this window is changed.
+  New state is *OFF*.      
+* ``UI_EVENT_WIN_TO_TOP`` - internal machinery event. Request to bring window to 
+  top position.
+* ``UI_EVENT_WIN_TO_BOTTOM`` - internal machinery event. Request to bring window to 
+  bottom position.       
+* ``UI_EVENT_WIN_MOVE`` - internal machinery event. Request to bring window to new x/y.            
+
+If ``type`` equals ``UI_EVENT_TYPE_GLOBAL``, this is a global event. 
+
+Global events are converted to multiple window events for related windows.
+
+* ``UI_EVENT_GLOBAL_REPAINT_RECT`` - repain part of all windows which intersect
+  with given rectangle.
+
+Functions to send events
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code:: c
+
+    void ev_q_put_mouse( int x, int y, int buttons );
+    void ev_q_put_key( int vkey, int ch, int modifiers );
+    void ev_q_put_win( int x, int y, int info, struct drv_video_window *focus );
+    void ev_q_put_global( ui_event_t *e );
+    void ev_q_put_any( ui_event_t *ie );
+
+**ev_q_put_mouse**
+  Put mouse event onto the main event q.
+
+**ev_q_put_key**
+  Put key event onto the main event q. An ``vkey`` parameter value is ignored.
+
+**ev_q_put_win**
+  Put window event onto the main event q.
+
+**ev_q_put_global**
+  Put global event onto the main event q. Supposed that event system
+  will decide which windows have to receive this event.
+
+**ev_q_put_any**
+  Put any type of event onto the main event q. BE CAREFUL.
+  NB - not forget to set focus before sending events to window!
+
+  This function is not supposed to be used outside of events system.
+
+How to process events in kernel code
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There is a function pointer in window structure which
+points to the function called to process events for this window.
+
+.. code:: c
+
+    int (*inKernelEventProcess)( struct drv_video_window *w, struct ui_event *e );  
+
+On window creation defaul event processor pointer is stored here. If you want
+to override, call default processor function (``defaultWindowEventProcessor``) 
+for all of the events before or after special processing. If, for some reason,
+you will replace event processor not for main, but for title window (that is an
+additional window which is used to paint title bar), pass event to
+``w_titleWindowEventProcessor``.
+
+Keyboard maps
+-------------
+
+There is basic support for national keyboards in Phantom. Currently
+it has one hardcoded keymap, but it is not a big problem to add 
+other keymaps and keymap selection machinery. Please leave an issue in
+project GitHub if you need specific keymap.
 
 Controls
 --------
