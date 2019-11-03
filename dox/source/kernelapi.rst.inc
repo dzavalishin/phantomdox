@@ -1875,7 +1875,6 @@ Phantom graphical subsystem is built in 4 layers:
 Windows
 -------
 
-
 .. code:: c
 
     #include <video/window.h>
@@ -1912,6 +1911,31 @@ Windows
     void    w_get_bounds( window_handle_t w, rect_t *out );
     void    w_set_visible( window_handle_t h, int v );
     void    w_set_bg_color( window_handle_t w, rgba_t color );
+
+Simple example of using windows:
+
+
+.. code:: c
+
+    drv_video_window_t *w = drv_video_window_create( 
+        WXS, WYS, 300, 300, 
+        COLOR_BLACK, "Test Window", WFLAG_WIN_DECORATED );
+
+    w_draw_line( w, 0, 0, WXS, WYS, COLOR_RED );
+    w_fill_ellipse( w, 30, 30, 15, 27, COLOR_BLUE );
+
+    w_font_draw_string( w, &drv_video_8x16san_font, "Bitmap font", 
+        COLOR_BLACK, COLOR_GREEN, 0, 0 );
+
+    w_fill_box( w,  40, 32, 33, 10, COLOR_RED );
+
+    font_handle_t font = w_get_system_font_ext( 50 );
+    w_ttfont_draw_string( w, font,
+        "TrueType text", COLOR_LIGHTRED,
+        10, 50 );
+
+    w_release_tt_font( font );
+    drv_video_winblt( w );
 
 Events
 ------
