@@ -1950,45 +1950,43 @@ are supposed to be processed by window owning code.
 
     struct ui_event
     {
-        queue_chain_t               echain; // on q
+        queue_chain_t             echain;
 
-        int                         type; // UI_EVENT_TYPE_
-        int                         extra; // used for button event - button id
+        int                       type; // UI_EVENT_TYPE_
+        int                       extra;
 
-        time_t                      time;
+        time_t                    time;
 
-        int                         abs_x;
-        int                         abs_y;
-        int                         abs_z; // z of clicked win
+        int                       abs_x;
+        int                       abs_y;
+        int                       abs_z; // z of clicked win
 
-        int                         rel_x;
-        int                         rel_y;
-        int                         rel_z;
+        int                       rel_x;
+        int                       rel_y;
+        int                       rel_z;
 
-        struct drv_video_window *   focus; // Target window
+        struct drv_video_window * focus;
 
     // Shift, alt, etc - actual for key and mouse events
-        int                         modifiers;
+        int                       modifiers;
 
         union {
-
             struct {
-                int                 vk;     // key code
-                int                 ch;     // unicode char
+                int               vk;
+                int               ch;
             } k;
 
             struct {
-                int                 buttons;        // Bits correspond to mouse buttons
-                int                 clicked;        // Bits correspond to mouse buttons clicked this time
-                int                 released;       // Bits correspond to mouse buttons released this time
+                int               buttons;
+                int               clicked;
+                int               released;
             } m;
 
             // WIN and GLOBAL events
             struct {
-                int                 info;           // UI_EVENT_WIN_
-                rect_t              rect;           // If relevant...
-                rect_t              rect2;          // If relevant...
-                //rgba_t              color;          // For fill op
+                int               info;   // UI_EVENT_WIN_
+                rect_t            rect;
+                rect_t            rect2;
             } w;
         };
     };

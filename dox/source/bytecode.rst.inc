@@ -120,7 +120,7 @@ operation sys must return some object or throw an exception.
 Actual implementation uses for ``sys`` the same calling convention as for
 regular methods.
 
-..sidebar:: Sys is not call
+.. sidebar:: Sys is not call
 
   It is possible to pass parameters to sys on int stack and receive some 
   return there as well, which is differs from ``call``, which passes 
