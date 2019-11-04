@@ -155,7 +155,7 @@ Kernel allocators:
 Physical memory allocator
 -------------------------
 
-.. index:: single: RAM
+.. index:: single: physical memory
 
 Allocate and free physical computer memory. Allocation unit is page (usually
 4094 bytes). Physical memory is usually quite limited resource, don't waste it.
@@ -204,6 +204,8 @@ This set of fuctions is good if you need just big amount of kernel memory.
 Address space allocator
 -----------------------
 
+.. index:: single: address space
+
 Allocate address space - page address or set of page addresses. This set of
 calls **does not allocate memory**, just interval of addresses to be mapped to
 some physical memory.
@@ -226,6 +228,7 @@ space are conrolled by kernel in a special way.
 .. index:: single: physaddr_t
 .. index:: single: page_mapped_t
 .. index:: single: page_access_t
+.. index:: single: address space
 
 .. code:: c
 
@@ -257,6 +260,8 @@ Possible values for ``access`` parameter:
 Physical memory access
 ----------------------
 
+.. index:: single: physical memory
+
 Sometimes it is needed to copy data to or from physical memory.
 Set of fuctions helps to do it easily.
 
@@ -271,7 +276,7 @@ Set of fuctions helps to do it easily.
 Kernel heap
 -----------
 
-.. index:: single: heap
+.. index:: single: kernel heap
 
 Not much to say, use classic ``malloc``, ``calloc`` and ``free`` functions
 as usual. Note that size of heap is fixed and you can easily run out of it.
@@ -304,6 +309,7 @@ functions can be registered if needed.
 After creating pool you can set additional properties.
 
 .. code:: c
+    :emphasize-lines: 3,4
 
     pool_t fonts_pool = create_pool();
 
@@ -425,6 +431,8 @@ pool element still exists and will exist for the time we access it.
 
 Iterate through pool elements.
 
+.. index:: single: pool foreach
+
 .. code:: c
 
     errno_t pool_foreach( pool_t *pool, 
@@ -473,7 +481,7 @@ Code example:
 Interrupts
 ----------
 
-.. index:: single: interrupt
+.. index:: single: interrupt handler
 
 Hardware interrupts
 -------------------
@@ -2033,6 +2041,8 @@ Events
 ------
 
 .. index:: single: ui_event_t
+
+.. TODO drag drop 
 
 Events are messages sent to window system requesting update its state.
 Most of events are processed by window system itself. Some event

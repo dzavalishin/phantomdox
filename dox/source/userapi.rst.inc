@@ -16,6 +16,7 @@ handy wrappers from ``.phantom`` package.
 Package .internal
 -----------------
 
+.. index:: single: internal class
 
 .internal.string
 ----------------
@@ -342,7 +343,7 @@ UDP protocol. Port numbers and IP addresses are in host byte order (usual intege
 .internal.window
 ----------------
 
-.. index:: single: .internal.window
+.. index:: single: .internal.window, window, persistent window
 
 Access GUI subsystem.
 

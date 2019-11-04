@@ -36,6 +36,8 @@ Heart of VM. Reads and executes bytecode instrutctions.
 Stacks subsystem
 ----------------
 
+.. index:: single: VM stack
+
 There are four stacks in Phantom VM. Object stack,
 integer (numeric) stack, call stack and exception
 handlers stack.
@@ -73,6 +75,8 @@ Execution environment
 Class loader and cache
 ----------------------
 
+.. index:: single: class loader
+
 VM code looks for classes in 3 places:
 
 * List of internal classes compiled into the VM implemenation.
@@ -83,6 +87,8 @@ VM code looks for classes in 3 places:
 
 Internal classes engine
 -----------------------
+
+.. index:: single: internal class
 
 Internal classes are classes provided by kernel.
 All of them have name starting with ``.internal``, 
@@ -107,6 +113,8 @@ to be re-run if interrupted by OS reboot.
 
 Root object and services 
 ------------------------
+
+.. index:: single: root object 
 
 Phantom object land has one special object called root object.
 
@@ -142,6 +150,8 @@ VM and persistent memory
 Object allocator
 ----------------
 
+.. index:: single: object allocator
+
 Object allocator is memory allocation code that works in
 the persistent memory.
 
@@ -155,6 +165,8 @@ lot.
 
 Garbage collectors
 ------------------
+
+.. index:: single: garbage collector
 
 There are two garbage collectors in Phantom OS.
 

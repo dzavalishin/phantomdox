@@ -12,6 +12,8 @@ operations implemented now.
 Flow control
 ------------
 
+.. index:: single: flow control
+
 jmp
 ---
 
@@ -131,7 +133,7 @@ sys
 
 .. index:: single: sys
 .. index:: single: syscall
-.. index:: single: internal
+.. index:: single: internal class
 
 
 ``sys syscall_number``
@@ -290,6 +292,8 @@ Strings are Unicode UTF-8.
 const_pool
 ----------
 
+.. index:: single: constant pool
+
 ``const_pool 22;``
 
 Load constant number 22 from constants pool. Constants pool is 
@@ -340,6 +344,8 @@ byte code operation must be prepended with a prefix.
 
 prefix_long, prefix_float, prefix_double
 ----------------------------------------
+
+.. index:: single: instruction prefix
 
 Select numeric data type for the next integer stack operation.
 

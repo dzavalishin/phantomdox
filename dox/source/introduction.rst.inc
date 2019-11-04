@@ -7,10 +7,13 @@ To be short:
 - Orhogonal persistence. Application does not feel OS shutdown and restart.
   Even abrupt restart. It is guaranteed that application will be restarted in
   consistent state, which is not too old.
-- As long as you don't loose your variable, it's state is the same between OS reboots. You don't have (though you can)
+- As long as you have reference to any variable, it's state is the same between OS 
+  reboots. You don't have (though you can)
   save porgram state to files. It is persistent.
-- Managed code. Though Phantom has simple Posix compatibility subsystem, native Phantom applications are running in a bytecode machine.
-- Global address space. Phantom OS is an application server. All applications can communicate directly, by sharing objects.
+- Managed code. Though Phantom has simple Posix compatibility subsystem, 
+  native Phantom applications are running in a bytecode machine.
+- Global address space. Phantom OS is an application server. All 
+  applications can communicate directly, by sharing objects.
 
 Phantom OS persistence is achieved not by serializing data to files,
 but by running all applications in a persistent RAM. You can (and it will be true)
@@ -180,3 +183,32 @@ which is not needed in Phantom.
 Note that all of that is true for native Phantom OS
 *personality*. There is also POSIX *personality*, 
 which currently is not persistent.
+
+--------------------------
+Frequently Asked Questions
+--------------------------
+
+In classic OS we can restart program if it fails. In 
+persistent OS program will run forever and if it failed,
+it can not be restarted?
+  Program can be restarted in persistent OS just as you wish.
+  The difference is that operating system does not kill
+  program on each reboot. It does not forbid user to kill and
+  re-run any program.
+
+Other systems will use files for long time. How can Phantom
+communicate wiith them if Phantom does not use files?
+  Phantom lets you write native programs that can work without
+  files. But still you can use files. Actually, application
+  program can ignore all the Phantom OS special features and
+  work as if it was in traditional OS. Or use Phantom specific 
+  features partially, or mix traditional and Phantom OS style.  
+
+  There are special services in Phantom which simplify writing 
+  programs that need to interoperate with others.
+
+.. TODO which features? save to JSON?
+
+
+.. Persistent OS update
+
