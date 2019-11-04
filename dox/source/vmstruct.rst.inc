@@ -15,6 +15,15 @@ which executes Phantom bytecode. Main components of VM are:
 * Object allocator
 * Garbage collectors
 
+--------------
+Code execution
+--------------
+
+Phantom VM executes bytecode in threads. Each thread is native kernel
+thread and corresponding VM `.internal.thread`_ object. During snapshot 
+thread state (current *this*, method *ordinal* and *instruction pointer*) 
+is stored in this object, and that is the state thread will be restarted
+on kernel reboot.
 
 Main code execution loop
 ------------------------
@@ -56,6 +65,10 @@ Int and float are allways 32 bits, long and double are allways
 
 Numeric stack contains unboxed numeric binaries and is used
 for numeric and boolean operations.
+
+---------------------
+Execution environment
+---------------------
 
 Class loader and cache
 ----------------------
@@ -119,6 +132,12 @@ and be able to build the rest of object land.
 Such an environment is created *manually* by the VM init code
 and results in a few very basic classes to be created in 
 persistent memory.
+
+------------------------
+VM and persistent memory
+------------------------
+
+
 
 Object allocator
 ----------------

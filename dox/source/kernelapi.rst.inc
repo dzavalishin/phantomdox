@@ -1647,10 +1647,8 @@ Device descriptor structure:
     struct phantom_device
     {
         const char *                name;
-        int                         seq_number; // Number of the device for the same name (driver)
-
-        void *                      drv_private; // Driver's private part
-
+        int                         seq_number; 
+        void *                      drv_private;
         phantom_dev_ops_t           dops;
 
         addr_t                      iobase;
@@ -1682,9 +1680,9 @@ Device descriptor structure:
   Can be used or ignored by driver. Kernel does not interpret.
 
 **props**
-  Device properties, see separate description.
+  `Device properties`_, see separate description.
 
-.. TODO ref to props description
+.. TODO detailed description
 
 Device properties
 -----------------
@@ -2220,6 +2218,25 @@ for all of the events before or after special processing. If, for some reason,
 you will replace event processor not for main, but for title window (that is an
 additional window which is used to paint title bar), pass event to
 ``w_titleWindowEventProcessor``.
+
+Window and control focus
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+One of the visible windows is usually *focused* - technically it means 
+that this window will receive keyboard events. Focused window is usually
+the topmost, but not necessarily - window is getting focus if mouse is 
+over this window, but is brought to top only if clicked to.
+
+You can select next window to be focused with Ctrl-TAB or Alt-TAB key sequence,
+hovering mouse over or clicking with mouse.
+
+If window has controls in it (buttons, swithces, etc), one of these 
+controls is also focused. This control will get all the keyboard input
+sent to this window.
+
+Next control can be selected to be in focus by TAB key press.
+
+.. TODO setting win or ctrl focus programmatically
 
 Keyboard maps
 -------------
