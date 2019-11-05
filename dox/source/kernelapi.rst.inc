@@ -2774,9 +2774,9 @@ structure of some type.
   Size of object contents **in bytes**.
 
 
+.. comment   :align: right
 
 .. figure:: img/ObjectLayout.*
-   :align: right
    :scale: 60 %
 
    Layout of regular and ``.internal`` class object
