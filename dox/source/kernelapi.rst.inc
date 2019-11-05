@@ -2777,6 +2777,7 @@ structure of some type.
 
 .. figure:: img/ObjectLayout.*
    :align: right
+   :scale: 60 %
 
    Layout of regular and ``.internal`` class object
 
