@@ -152,6 +152,21 @@ Kernel allocators:
 - Pools
 
 
+
+.. figure:: img/MemoryLayout.*
+
+   Virtual memory layout for x86 architecture
+
+   Lowest part of memory is identically mapped - virtual address is
+   equal to physical RAM address. It is not a requirement, it's just
+   the easiest way to start the kernel. Blue part is address space that is
+   available for allocations. Upper half is where applications live.
+   Also referred to as object land.
+
+   Note that on other architectures (namely, on MIPS) address space
+   structure is different.
+
+
 Physical memory allocator
 -------------------------
 

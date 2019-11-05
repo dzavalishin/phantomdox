@@ -260,7 +260,7 @@ obvious example.
   character, network and graphics drivers. Sound driver is, 
   for example, a character driver.
 
-  Note please driver/device properties engine. It's a phantom 
+  Please note driver/device properties engine. It's a phantom 
   specific ioctl like interface.
 
 
