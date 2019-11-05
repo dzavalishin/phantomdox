@@ -154,6 +154,7 @@ Kernel allocators:
 
 
 .. figure:: img/MemoryLayout.*
+   :align: right
 
    Virtual memory layout for x86 architecture
 
@@ -2771,6 +2772,18 @@ structure of some type.
 
 **_da_size**
   Size of object contents **in bytes**.
+
+
+
+.. figure:: img/ObjectLayout.*
+   :align: right
+
+   Layout of regular and ``.internal`` class object
+
+   Regular objects can contain references (pointers) to other objects
+   only. Internal ones can have any content which is interpreted by 
+   in-kernel class implementation.
+
 
 There are numerous functions to access objects in different ways.  
 
