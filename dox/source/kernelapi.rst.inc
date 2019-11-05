@@ -152,9 +152,9 @@ Kernel allocators:
 - Pools
 
 
+.. comment   :align: right
 
 .. figure:: img/MemoryLayout.*
-   :align: right
 
    Virtual memory layout for x86 architecture
 
