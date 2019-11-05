@@ -59,6 +59,34 @@ and will be renamed accordingly.
 
     int charAt( var index : int );
 
+
+
+
+.internal.stringbuilder
+-----------------------
+
+.. index:: single: .internal.stringbuilder
+
+
+Mutable string optimized for being extended from the tail.
+
+.. code:: java
+
+	int equals(var object)
+	.internal.string toString()
+	.internal.string substring( var index : int, var length : int )
+	int byteAt( var index : int )
+	int concat( var s : string )
+	int length()
+	int strstr( var s : string )
+
+The main difference from .internal.string is that ``concat`` 
+does not return new string, but extends ``this`` object.
+
+
+
+
+
 .internal.binary
 ----------------
 

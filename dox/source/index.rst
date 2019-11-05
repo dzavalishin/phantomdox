@@ -12,6 +12,9 @@ The Phantom Operating System
 Introduction
 ............
 
+This book is Phantom OS developer's guide. It contains description of OS internals
+and examples on writing kernel components and userland code.
+
 .. only:: html
 
    Package version |version|

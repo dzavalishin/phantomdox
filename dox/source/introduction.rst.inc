@@ -184,6 +184,133 @@ Note that all of that is true for native Phantom OS
 *personality*. There is also POSIX *personality*, 
 which currently is not persistent.
 
+
+-----------------------
+Phantom OS Architecture
+-----------------------
+
+
+.. figure:: img/PhantomComponents.*
+
+   Major components of Phantom OS instance
+
+   From bottom to top are basic kernel engines, main
+   kernel subsystems and userland objects.
+
+
+
+Basic kernel engines
+--------------------
+
+Basic engines provide lowest level services for functional kernel subsystems
+and create hardware independent abstractions.
+
+**Threads**
+  Preemprive multitasking for kernel threads.
+
+**Scheduler**
+  Therad priorities, including real-time.
+
+**Mutex/Cond/Sem**
+  And spinlock as basic primitive. Provide threads 
+  syncronization and event signalling.
+
+**Physical memory allocator**
+  RAM allocation. Co-operates with paging engine to 
+  keep supply of free memory by paging memory out.
+  Also includes address space allocator which can be used
+  to create memory windows or memory page aliases.
+
+**Bus IO**
+  Also PCI enumeration. Provides for low level hardware
+  communications.
+
+**Interrupts and exceptions**
+  Hardware interrupts, context switching, page faults.
+
+
+**Page table**
+  Main low-level engine of persistent memory.
+
+
+**Cbuf,KHash**
+  Basic kernel data structures.
+
+
+**Pools**
+  Reference counting kernel object containers.
+
+**Timing**
+  Time of day, timer callouts, etc.
+
+
+Main kernel subsystems
+----------------------
+
+These subsystems are either visible to userland code
+through some API (like, for example, TCP/IP), or
+provide seamless services - persistent memory is
+obvious example.
+
+.. TODO need pictures for all subsystems
+
+**Drivers**
+  Of course, this is the lowest level which can be directly
+  visible to user code. Drivers are divided into block (disk),
+  character, network and graphics drivers. Sound driver is, 
+  for example, a character driver.
+
+  Note please driver/device properties engine. It's a phantom 
+  specific ioctl like interface.
+
+
+**Network stack**
+  One of the basic building blocks of modern kernel.
+  Note that Phantom is able to set up paging over the network.
+
+**Graphics/Windows/Controls/Events**
+  There is an integrated kernel-level windowing subsystem in Phantom OS.
+  TrueType fonts, bitmap fonts, set of UI components, UTF-8 and -32, etc.
+
+**Main disk IO stack**
+  Asyncronous disk IO based on request objects. Partitions, sync IO interface,
+  deep integration with paging system, cache support engine, all the stuff.
+
+**Unix emulation layer**
+  It is possible to compile Phantom kernel with Unix support turned off,
+  but if you want files - Unix prt is a point for filesystems to live in.
+  Is able to run more or less POSIX-compatible Elf executables.
+
+**Persistent pager**
+  And snapshots subsystem - this is the heart of Phantom OS.
+  Makes application code to believe that OS never reboots.
+
+**Internal classes implementation**
+  A channel from object land to kernel API.
+
+
+**Persistent syscalls**
+  An engine that resolves problem of kernel reboot during a long syscall
+  from persistent program.
+
+
+**Restart manager**
+  Provides means to find all objects that have to be re-connected to kernel on
+  reboot.
+
+**Bytecode VM**
+  Virtual machine interpretator - executes userland bytecode.
+
+
+**Persistent memory allocator and GC**
+  Even persistent memory should be allocated.
+
+
+**Kernel class loader**
+  Used to initiate object land on the first boot of
+  empty OS instance.
+
+
 --------------------------
 Frequently Asked Questions
 --------------------------
@@ -211,4 +338,14 @@ communicate wiith them if Phantom does not use files?
 
 
 .. Persistent OS update
+
+
+There soon will be hardware RAM persistence in all computers and Phantom will not be needed,
+every OS will become a persistent OS.
+  It is not that simple. There are problems that must be solved by any OS to really hide
+  a reboot from software. This book will give some ideas about these problems and solutions
+  impemented in Phantom.
+
+
+
 
