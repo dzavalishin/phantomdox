@@ -311,6 +311,29 @@ obvious example.
   empty OS instance.
 
 
+Native Toolchain
+----------------
+
+   Phantom OS programs can be written in its own language which is
+   directly supported by ``plc`` (phantom language compiler) or
+   in Java or Python (this part is in experimental stage).
+
+   For Java and Python compilation is done in two stages. First
+   native parser compiles code and produces some intermediate
+   representation, then ``plc`` consumes it and generates Phantom
+   bytecode.
+
+
+.. figure:: img/PipeLine.*
+
+   Native toolchain of Phantom OS
+
+
+   Phantom bytecode can be run by Phantom OS kernel or by 
+   hosted runtime. In the last case persistence is not (yet?)
+   supported.
+
+
 --------------------------
 Frequently Asked Questions
 --------------------------

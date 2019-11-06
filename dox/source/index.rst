@@ -15,6 +15,10 @@ Introduction
 This book is Phantom OS developer's guide. It contains description of OS internals
 and examples on writing kernel components and userland code.
 
+Source codes for this book can be found in `Phantom OS GitHub`_ repository.
+
+.. _Phantom OS GitHub: https://github.com/dzavalishin/phantomuserland/issues/
+
 .. only:: html
 
    Package version |version|
