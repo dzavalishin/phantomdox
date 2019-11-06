@@ -616,6 +616,11 @@ in a simple way.
 Frequently Asked Questions
 --------------------------
 
+Traditional program starts and stops and when stopped, code of program can be updated,
+a new version of program intalled. If program does not stop, how can you update program
+code?
+  This question is discussed in a separate chaprer, please refer to `Program update`_.
+
 In classic OS we can restart program if it fails. In 
 persistent OS program will run forever and if it failed,
 it can not be restarted?

@@ -1,3 +1,5 @@
 
 dox/.DS_Store
 .DS_Store
+*.inc~
+*.rst~
