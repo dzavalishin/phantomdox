@@ -334,6 +334,284 @@ Native Toolchain
    supported.
 
 
+Example of Phantom program
+--------------------------
+
+
+Lets review a simple Phantom OS program that gets weather information from public service
+and draws a diagram of temperature with the one minute step.
+
+.. code:: java
+
+    package .ru.dz.demo;
+    
+    import .phantom.os;
+    import .internal.window;
+    import .internal.bitmap;
+    import .internal.tcp;
+    import .internal.time;
+    import .internal.directory;
+    import .internal.long;
+    
+    
+    class weather
+    {
+        var xpos : int;
+        var ypos : int;
+    
+        var win   : .internal.window;
+        var sleep : .internal.time;
+        var http  : .internal.tcp;
+    
+        var itemp : .internal.long;
+    
+    
+        void run( void )
+        {
+            var bmp         : .internal.bitmap;
+            var bmpw        : .internal.bitmap;
+            var json_string : .internal.string;
+            var json        : .internal.directory;
+            var jtmp        : .internal.directory;
+    
+            bmp = new .internal.bitmap();
+            bmp.loadFromString(getBackgroundImage());
+    
+            win = new .internal.window();
+    
+            win.setWinPosition(650,500);
+    
+            win.setTitle("Weather");
+    
+            win.setFg(0xFF93CDB4); // light green
+            win.setBg(0xFFccccb4); // light milk
+    
+            win.clear();
+            win.drawImage( 0, 0, bmp );
+    
+            bmpw = new .internal.bitmap();
+            bmpw.loadFromString(import
+                "../resources/backgrounds/weather_sun_sm.ppm");
+            win.drawImage( 17, 102, bmpw );
+            win.update();
+    
+            sleep = new .internal.time();
+            http = new .internal.tcp();
+    
+            xpos = 17;
+            while(1)
+            {
+                json_string = http.curl(
+                    "http://api.weather.yandex.ru/v1/forecast?extra=true&limit=1",
+                    "X-Yandex-API-Key: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\r\n" );
+    
+                json = json_string.parseJson();
+                jtmp = json.get("fact");
+                itemp = jtmp.get("temp");
+    
+                win.drawImagePart( 0, 0, bmp, 250, 240, 120, 22 );
+    
+                win.setFg(0); // black
+                win.drawString( 280, 235, itemp.toString() );
+                win.drawString( 250, 235, "T =" );
+    
+                ypos = 15 + (itemp * 2);
+    
+                win.setFg(0xFF93CDB4); // light green
+                if( ypos < 70 )
+                    win.fillBox( xpos, ypos, 2, 2 );
+    
+    
+                sleep.sleepSec( 60 );
+    
+                xpos = xpos+1;
+                if( xpos > 358 ) xpos = 17;
+            }
+        }
+
+        .internal.string getBackgroundImage()
+        {
+            return import "../resources/backgrounds/weather_window.ppm" ;
+        }
+
+    };
+
+
+``import .internal.window;``
+
+  Import statements bring in system service classes, such as window.
+
+
+``win = new .internal.window();``
+  Create instance of window. That is a canvas for us to paint on.
+  In Phantom there is no paint() or repaint() request or message
+  that forces us to repaint window contents. Persistent paradigm
+  dictates direct way of communication: program paints into the
+  window whenever it is needed and window contents are saved even
+  across the OS reboots.
+
+``win.setBg(0xFFccccb4);``
+  Do some settings for window, such as foreground and backgroud
+  colors, clear it, paint background image.
+
+Now, here is quite an intersting part:
+
+.. code:: java
+
+    bmpw = new .internal.bitmap();
+    bmpw.loadFromString(import
+        "../resources/backgrounds/weather_sun_sm.ppm");
+    win.drawImage( 17, 102, bmpw );
+
+We create a variable of ``.internal.bitmap`` type, which is suitable
+for holding a bitmap image.
+
+An ``import ".../rweather_sun_sm.ppm"`` construct is specific for Phantom
+language and creates a string constant which contains whole contents of
+host computer file.
+
+Phantom OS is a system which can work completely without file system.
+If program needs some resource for its work that resource can be just
+stored in a variable. An ``import`` operator creates such a variable
+with an asset inside.
+
+But it contains a bitmap in a ``.ppm`` file format, and we need a
+bitmap object which can be paint onto the window.
+
+Here goes ``bmpw.loadFromString()``, which can parse image file fomat
+from string and convert it into the internal representation.
+
+This internal representation will continue to exist as content of
+``bmpw`` variable.
+
+Note that:
+
+* We keep assets in program variables, not in files. It is safer as there is
+  absolutely no access to those assets from outside of program. No virus or malware
+  attack is possible as there is no way to reach our ``bmpw`` variable from outside.
+
+  It is not so critical for a bitmap, but suppose it is not a bitmap but a Lua script?
+  Or just a program code? Note that executable code of program is not a file too, it is
+  a persistent object that is visible just to Phantom executive subsystem. You can not
+  search filesystem and modify ``.exe`` file to implant virus code.
+
+* We brought asset in as an image of some file, which is kept in a string constant.
+  But this constant won't consume any memory or disk space as soon as program started,
+  because it will be consumed by ``bmpw.loadFromString()`` and freed by garbage collector.
+
+* What we will keep as persistent variable value is internal representation of bitmap,
+  which is instanly ready for use. After reboot or any number of reboots it will not
+  be needed to re-read image file contents, parse file and convert it to bitmap.
+
+  Any asset that is needed by Phantom program can be kept in a persistent variable
+  just in a form that is needed by program.
+
+* You don't have to provide a way to build distributive and install a program, deciding
+  about which directory it should occupy on target machine and how it will find its assets.
+  All the assets are inside. For this program just **one** class image is all the distributive.
+  Well, for a more complex program it will be a set of classes (combined in a container,
+  of course), but still there will be no problems with locating assets on a tegrat file system.
+
+.. note:: Strings are binaries.
+
+  Phantom .internal.string class can contain any binary content including binary zeroes
+  and sometimes is used as a container for complex data or just as a byte buffer.
+
+Ok, lets go furter.
+
+``win.drawImage( 17, 102, bmpw );``
+
+  We paint our bitmap held in a persistent variable into the persistent window.
+
+  Note that this operation is performed just one time in this program's life too.
+  The program will start and work as long as user needs it - practically until it
+  will be killed by hand.
+
+  Image paint by this line of code will exist in a tagret window forever or as long
+  as it is not overpaint by other program statements.
+
+
+``sleep = new .internal.time();``
+
+  Here we create an instance of class that provides us with OS timing API. Later
+  it will be used to sleep for a minute: ``sleep.sleepSec( 60 );``.
+
+
+``http = new .internal.tcp();``
+
+  This object is a handle to network services. Despite the name this class provides
+  not TCP only, but some higher level API.
+
+.. note:: Forever means forever in Phantom
+
+  As it is usually said, ``while(1)`` is a ``forever()`` statement.
+
+  In Phantom OS it is **literally** true. This loop will **never** end
+  for the rest of this program's life. Again, as long as user does not kill
+  the instance of this program.
+
+``json_string = http.curl( url, header )``
+
+  Here we ask OS default HTTP client to retrieve some web content.
+  As you can guess, in this case server returns us a JSON structure
+  with current weather infiormation.
+
+
+``json = json_string.parseJson();``
+
+  Parsing a JSON is a method of string class, because nowadays it is really
+  frequently used thing. The returned object is of ``directory`` class, which
+  is simply a has map inside.
+
+``jtmp = json.get("fact");``
+
+  Extract JSON child node. It is a hash map too.
+
+``itemp = jtmp.get("temp");``
+
+  Extract numeric value of node.
+
+
+``win.drawImagePart( 0, 0, bmp, 250, 240, 120, 22 );``
+
+  Paint part of background image to clear old temperature value string. Note that
+  background image is kept in persistent variable too.
+
+
+``win.drawString( 280, 235, itemp.toString() );``
+
+  Paint new temperature value as sting.
+
+``win.fillBox( xpos, ypos, 2, 2 );``
+
+  Paint next point on temperature diagram.
+
+  Note again that we don't have to keep historical data for temperature and
+  repaint diagram on program restart: we are in a persistent OS and previously
+  paint data just keep exist in a window.
+
+Of course, this program is (intentionally) extremely simpe, it, for example,
+does not scroll diagram image (though that is another 2 lines of code) and
+does not check for exceptions, so it will die on any incorrect JSON received.
+But that is another 2 lines of code too.
+
+One could ask, is it ok not to keep historical temperature data at all, and
+it is a good question.
+
+First of all, it is not a complex thing in Phantom at all. Just add
+``tempHistory = new .internal.array()`` and put data in with
+``tempHistory.append( itemp )`` - and you will get, practically, a
+database. Yes, one variable in Phantom OS can be a database. Simple one, sure.
+
+But, frankly, we just don't need it for *this* program. It's goal is to
+paint diagram, and it does. There's no reason for a program to be more complex,
+that it has to.
+
+That is a goal of Phantom OS programming paradigm. Simple things must be implemented
+in a simple way.
+
+
+
 --------------------------
 Frequently Asked Questions
 --------------------------
