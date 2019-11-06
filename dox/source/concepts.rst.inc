@@ -12,6 +12,10 @@ In this chapter the most discussed problems of Phantom OS are discussed.
 Conceptual difficulties of persisten OS
 =======================================
 
+.. TODO network exchange
+.. TODO functional programming 
+.. TODO functional data structures
+.. TODO immutable
 
 --------------
 Program update
