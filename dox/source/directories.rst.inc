@@ -9,7 +9,7 @@ GitHub project directory tree:
   Kernel source code
 
 **phantom**
-  Kernel libaries and subsystems source code
+  Kernel libraries and subsystems source code
 
   **dev**
 
@@ -73,7 +73,7 @@ GitHub project directory tree:
     lstings are compared to reference ones.
 
     You can check differences and decide if new verion is
-    correcrt. There are two listings - *lst* and *lstc*.
+    correct. There are two listings - *lst* and *lstc*.
     Former one dumps structure of internal compiler's AST
     like tree with node data types and relations. Latter one
     is an output bytecode listing. 
@@ -100,7 +100,7 @@ GitHub project directory tree:
 
   **pfsextract**
     Tool to extract persistent memory image
-    from Phatom disk image file.
+    from Phantom disk image file.
 
 
 

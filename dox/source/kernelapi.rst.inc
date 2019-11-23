@@ -215,7 +215,7 @@ This set of fuctions is good if you need just big amount of kernel memory.
 
 .. warning::
   If you need buffer to communicate with hardware, do not use these functions.
-  Allocate and map memory manually, beacuse you will need special mode of mapping.
+  Allocate and map memory manually, because you will need special mode of mapping.
 
 Address space allocator
 -----------------------
@@ -279,7 +279,7 @@ Physical memory access
 .. index:: single: physical memory
 
 Sometimes it is needed to copy data to or from physical memory.
-Set of fuctions helps to do it easily.
+Set of functions helps to do it easily.
 
 .. code:: c
 
@@ -318,7 +318,7 @@ functions can be registered if needed.
 
     pool_t *create_pool();
     errno_t destroy_pool(pool_t *);
-    pool_t *create_pool_ext( int inital_elems, int arena_size );
+    pool_t *create_pool_ext( int initial_elems, int arena_size );
 
 .. TODO create_pool_ext
 
@@ -386,7 +386,7 @@ After creating pool you can set additional properties.
 
 Here is a complex element creation scenario example. Element init function
 allocates new element and sets its name from parameter passed to
-``pool_create_el``. If elemnt gets unused ``f_destroy`` deallocates 
+``pool_create_el``. If element gets unused ``f_destroy`` deallocates 
 it.
 
 .. code:: c
@@ -807,7 +807,7 @@ Thread flags:
 
 - THREAD_FLAG_USER: Runs in user mode. Not implemented.
 - THREAD_FLAG_VM: Runs bytecode virtual machine thread, owner points to VM thread object.
-- THREAD_FLAG_JIT: JITted VM tread - not imlpemented
+- THREAD_FLAG_JIT: JITted VM thread. Not imlpemented.
 - THREAD_FLAG_TIMEDOUT: Cond (or something else) was timed out.
 - THREAD_FLAG_UNDEAD: This thread can't be killed for some reason. Usually it's some special one like CPU idle thread.
 - THREAD_FLAG_NOSCHEDULE: Must not be selected by scheduler in usual way - per CPU 'parking' (idlest) thread
@@ -826,8 +826,8 @@ DPC: Thread pools
 .. index:: single: dpc_request
 
 DPC (Deferred Procedure Call) requests are supposed to be used in interrupts 
-handlers to offload long part of interrpt processing to thread and not to 
-keep seprate thread for every function of every driver.
+handlers to offload long part of interrupt processing to thread and not to 
+keep separate thread for every need of every driver.
 
 DPC subsystem keeps pool of threads used to handle requests, and adds threads
 to pool if all of existing threads are used.
@@ -1016,13 +1016,13 @@ Now some explanation.
 
 **memdisk_AsyncIo**
   This is driver entry point which is called with a new IO request
-  and has to handle it. In this simple example request is proicessed
+  and has to handle it. In this simple example request is processed
   right in place, but in real driver this function will, usually,
   just start IO and set things up so that pager_io_request_done() will
   be called in device interrupt.
 
 **pager_io_request_done**
-  This function must be called for a reqest when it is processed (with
+  This function must be called for a request when it is processed (with
   either success or error) with driver. Request ``rc`` field must be
   non-zero if request is not executed for some reason.
 
@@ -1133,7 +1133,7 @@ If we said that it is our partition, the next entry point will be called by kern
         return 0;
     }
 
-This code createds specific structure for use inside the FS driver (``FATFS``),
+This code creates specific structure for use inside the FS driver (``FATFS``),
 creates uufs_t file system descriptor, and mounts new file system. Note that 
 given in partition access structure ``p`` is stored in ``fs->dev`` so that FS
 can access its disk partition.
@@ -1275,7 +1275,7 @@ like file, directory, pipe. etc.
 .. TODO symlink flag?
 
 **ops**
-  Pointer to a list of entry points for operations wiil file.
+  Pointer to a list of entry points for operations available.
   Note that each file can have its own set of operations.
   You can have specific ops for directory and regular file, for example.
 
@@ -1302,7 +1302,7 @@ like file, directory, pipe. etc.
   Kind of file and operation modes for it, see defines above.
 
 **mutex**
-  Muex to take when working with this file.
+  Mutex to take when working with this file.
 
 .. TODO rules for mutex - any op or just access to struct?
 
@@ -1531,7 +1531,7 @@ in FS code, not in disk IO code.
 Network
 -------
 
-Phantom has classical TCP/IP netwrok stack. 
+Phantom has classical TCP/IP network stack. 
 
 Interfaces
 ----------
@@ -1603,8 +1603,9 @@ Main drivers subsystem
 
 
 These are structures that represent a driver. Just fields that are of
-use for a driver are shown, there are more fields, but most of them are
-just for kernel.
+use for a driver are described here.
+(There are more fields in the structures we talk about below, but most of them are
+just for kernel.)
 
 Driver entry points:
 
@@ -1694,7 +1695,7 @@ Device descriptor structure:
   Sequence number of device, if driver presents more than one.
 
 **drv_private**
-  POinter to driver's private data structure which is specific for
+  Pointer to driver's private data structure which is specific for
   this device.
 
 **dops**
@@ -1843,7 +1844,7 @@ Video drivers subsystem
 .. index:: single: VESA
 
 
-Video drivers provide access to grapchical hardware of the computer.
+Video drivers provide access to the graphical hardware of the computer.
 
 Video driver
 ------------
@@ -1906,7 +1907,7 @@ Video driver descriptor structure:
 
 **probe**
   This is the entry point which is called by graphics subsystem on start.
-  It must find out if there is some video device that this driver can control.
+  Provided function must find out if there is some video device that this driver can control.
   Return values are: ``VIDEO_PROBE_FAIL`` - no hardware found, driver is skipped.
   ``VIDEO_PROBE_SUCCESS`` - driver can work with this hardware, either in basic or
   accelerated mode (if accelerated - driver must provide corresponding entry points).
@@ -1980,7 +1981,7 @@ Phantom graphical subsystem is built in 4 layers:
 
 - Video driver
 - Bitblt to screen functions - copy window image to screen
-  supportnig z-order of windows
+  supporting z-order of windows
 - Windowing system: windows, painting to windows, events,
   window decorations and related support
 - Controls - graphical components supporting user interaction:
@@ -2123,7 +2124,7 @@ There are four types of events:
 * UI_EVENT_TYPE_GLOBAL -  Global events are usually converted to multiple WIN events.
   Specific data is in the ``w`` part.
   
-Following fileds are possibly used with any type of event.
+Following fields are possibly used with any type of event.
 
 * ``time`` - event creation time.
 * ``abs_x``, ``abs_y``, ``abs_z`` - absolute (screen) coordinates, associated with 
@@ -2133,7 +2134,7 @@ Following fileds are possibly used with any type of event.
 * ``modifiers`` - shift/alt/ctrl/etc modifiers actual for both mouse and key events.
 * ``focus`` - target window for this event.
 * ``extra`` - additional information or event. If event is related to the control
-  (like button or menu titem), control *id* is placed here.
+  (like button or menu item), control *id* is placed here.
 
 If ``type`` equals ``UI_EVENT_TYPE_MOUSE``, this is a mouse event. Following
 parameters are relevant in this case:
@@ -2149,7 +2150,7 @@ If ``buttons`` == 0 then event is mouse hover. If ``clicked`` and ``released`` a
 
 
 If ``type`` equals ``UI_EVENT_TYPE_KEY``, this is a keyboard event. Information 
-about the key that is changed is in ``k.ch`` field. Thid field contains printable
+about the key that is changed is in ``k.ch`` field. This field contains printable
 character or functional key code. Key codes for functional keys are defined 
 in ``compat/uos/keyboard.h``. You can check for key to be functional with
  ``KEY_IS_FUNC(k.ch)`` macros.
@@ -2192,7 +2193,7 @@ If ``type`` equals ``UI_EVENT_TYPE_GLOBAL``, this is a global event.
 
 Global events are converted to multiple window events for related windows.
 
-* ``UI_EVENT_GLOBAL_REPAINT_RECT`` - repain part of all windows which intersect
+* ``UI_EVENT_GLOBAL_REPAINT_RECT`` - repaint part of all windows which intersect
   with given rectangle.
 
 Functions to send events
@@ -2221,7 +2222,7 @@ Functions to send events
 
 **ev_q_put_any**
   Put any type of event onto the main event q. BE CAREFUL.
-  NB - not forget to set focus before sending events to window!
+  NB - don't forget to set focus before sending events to window!
 
   This function is not supposed to be used outside of events system.
 
@@ -2238,7 +2239,7 @@ points to the function called to process events for this window.
 
     int (*inKernelEventProcess)( struct drv_video_window *w, struct ui_event *e );  
 
-On window creation defaul event processor pointer is stored here. If you want
+On window creation default event processor pointer is stored here. If you want
 to override, call default processor function (``defaultWindowEventProcessor``) 
 for all of the events before or after special processing. If, for some reason,
 you will replace event processor not for main, but for title window (that is an
@@ -2256,7 +2257,7 @@ over this window, but is brought to top only if clicked to.
 You can select next window to be focused with Ctrl-TAB or Alt-TAB key sequence,
 hovering mouse over or clicking with mouse.
 
-If window has controls in it (buttons, swithces, etc), one of these 
+If window has controls in it (buttons, switches, etc), one of these 
 controls is also focused. This control will get all the keyboard input
 sent to this window.
 
@@ -2277,7 +2278,7 @@ Controls
 
 .. index:: single: control_handle_t
 
-Control is graphical elemen attached to window and processing user input.
+Control is graphical element attached to window and processing user input.
 
 Create control:
 
@@ -2343,7 +2344,7 @@ Following flags are defined:
   for buttons and similar controls.
 
 **CONTROL_FLAG_TOGGLE**
-  Button or menu item swithces on and off with each press.
+  Button or menu item switches on and off with each press.
 
 **CONTROL_FLAG_HORIZONTAL**
   Lay control horizontally - not yet used.
@@ -2426,7 +2427,7 @@ Phantom graphics subsystem supports bitmap and TrueType fonts.
 
 .. code:: c
 
-    #incude <video/font.h>
+    #include <video/font.h>
 
 Preinstalled set of bitmap fonts:
 
@@ -2540,7 +2541,7 @@ Use font:
   Paint string with given ttf font.
 
 **w_ttfont_draw_string_ext**
-  Extended string paint version. Returns X coordinte of 
+  Extended string paint version. Returns X coordinate of 
   ``find_for_char`` character in ``find_x`` variable.
   This feature is good for painting cursor line.
 
@@ -2548,7 +2549,7 @@ Use font:
   Paint one character with TrueType font.
 
 .. note::
-  It is not a good idea to paint text character by charcter, for
+  It is not a good idea to paint text character by character, for
   kerning is not processed if you do it this way.
 
 **w_ttfont_string_size**
@@ -2698,7 +2699,7 @@ objects contain some kind of data. For exmaple, object of class
 
   Actually phantom strings do not restrict its contents in any way.
   String can contain just any binary data including binary zeroes.
-  That is why strings in Phantom are freqently used as... anonymous files.
+  That is why strings in Phantom are frequently used as... anonymous files.
   It is handy to put assets into strings and Phantom language compiler
   has special support for this kind of use.
   For example, some applications keep bitmap pictures in strings.
@@ -3115,7 +3116,7 @@ Special interface exist to create and free cbufs in interrupt context.
   chain to copy to.
 
 **cbuf_memcpy_from_chain**
-  Copy from ``offsset`` position in chain to destination buffer.
+  Copy from ``offset`` position in chain to destination buffer.
 
 **cbuf_merge_chains**
   Build new chain by concatenation of two given chains.
@@ -3142,7 +3143,7 @@ Hash tables - khash
 .. index:: single: hash_table
 
 
-Kernel hash tables are used everywhare around to map 
+Kernel hash tables are used around to map 
 keys (like names or ports, or IP addressed) to handles or 
 structure pointers.
 
@@ -3177,7 +3178,7 @@ structure pointers.
   Set up a new hash. An ``table_size`` parameter
   determines size of hash table.
   An ``next_ptr_offset`` parameter gives offset to a field in a structure
-  wich is used as poiner to next sibling in hash node list. 
+  which is used as pointer to next sibling in hash node list. 
   Use ``offsetof(type_name, next_ptr)`` and add
   ``void *next_ptr`` field in a structure that you're going to keep in hash.
 
@@ -3329,21 +3330,21 @@ Main kernel logging facility has 6 entry points:
 
   LOG_FLOW( level, "format", args )
   LOG_ERROR( level, "format", args )
-  LOG_INFO\_( level, "format", args )
+  LOG_INFO_( level, "format", args )
   LOG_FLOW( level, "format", args )
   LOG_ERROR( level, "format", args )
-  LOG_INFO\_( level, "format", args )
+  LOG_INFO_( level, "format", args )
 
-Additional marcos show message in Phantom's debug window and log it.
+Additional macro definitions show message in Phantom's debug window and log it.
 
 .. code:: c
 
   SHOW_FLOW( level, "format", args )
   SHOW_ERROR( level, "format", args )
-  SHOW_INFO\_( level, "format", args )
+  SHOW_INFO_( level, "format", args )
   SHOW_FLOW( level, "format", args )
   SHOW_ERROR( level, "format", args )
-  SHOW_INFO\_( level, "format", args )
+  SHOW_INFO_( level, "format", args )
 
 If there is a message with no args, add 0 to macros name:
 

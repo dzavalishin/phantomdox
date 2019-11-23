@@ -46,7 +46,7 @@ Most of the methods are self explaining.
     long toLong();
 
 The next method parses JSON and returns tree of 
-correspondinf arrays/directories/leaf objects.
+corresponding arrays/directories/leaf objects.
 
 .. code:: java
 
@@ -246,7 +246,7 @@ Represents file/device access.
 Access kernel statistics. ``getStat()`` returns statistics information,
 first arg is counter number and second is kind of statistics counter value.
 
-Corresponding conunter number values can be found in ``<kernel/stats.h>``. There are no 
+Corresponding counter number values can be found in ``<kernel/stats.h>``. There are no 
 Phantom language defines yet, sorry. 
 
 Kind values are:
@@ -303,7 +303,7 @@ it is possible to access such an object for own (current) thread.
         /**
          *
          * Return (possibly specific for this thread) OS
-         * interface object, wchich is used to access public
+         * interface object, which is used to access public
          * OS services.
          *
          * @See .phantom.osimpl
@@ -354,7 +354,7 @@ Time related kernel services.
 
 .. index:: single: .internal.udp
 
-UDP protocol. Port numbers and IP addresses are in host byte order (usual integers).
+UDP protocol. Port numbers and IP addresses are in host byte order (ordinary integers).
 
 .. code:: java
 
@@ -521,7 +521,7 @@ run in a thread.
 
 .. index:: single: .phantom.environment
 
-Similar to Uinx process environment - ``key=value`` settings storage.
+Similar to Unix process environment - ``key=value`` settings storage.
 Currently not really used.
 
 .. code:: java

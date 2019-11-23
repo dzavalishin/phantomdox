@@ -4,14 +4,14 @@ What Phantom OS is
 
 To be short:
 
-- Orhogonal persistence. Application does not feel OS shutdown and restart.
+- Orthogonal persistence. Application does not feel OS shutdown and restart.
   Even abrupt restart. It is guaranteed that application will be restarted in
   consistent state, which is not too old.
 - As long as you have reference to any variable, it's state is the same between OS 
   reboots. You don't have (though you can)
-  save porgram state to files. It is persistent.
-- Managed code. Though Phantom has simple Posix compatibility subsystem, 
-  native Phantom applications are running in a bytecode machine.
+  save prorgram state to files. It is persistent.
+- Managed code. Native Phantom applications are running in a bytecode machine. 
+  (But it is worth to mention that Phantom has simple Posix compatibility subsystem too.)
 - Global address space. Phantom OS is an application server. All 
   applications can communicate directly, by sharing objects.
 
@@ -25,7 +25,7 @@ Which subsystems Phantom currently includes:
 
 - Kernel itself: threads, syncronization, persistent memory management.
 - Bytecode virtual machine - running native applications.
-- Posix layer - running Linux compatible (but non yet persistent) code.
+- Posix layer - runs Linux compatible (but not yet persistent) code.
 - Graphics subsystem - Windows, controls, UI.
 - Networking (TCP/IP)
 - Phantom language compiler - the most native userland language
@@ -45,10 +45,10 @@ Do we need one more OS
 There are millions of homegrown operating systems around.
 Why one more?
 
-Well, here I will try to describe the reasons behing making Phantom OS.
+Well, here I will try to describe the reasons behind making Phantom OS.
 
-Operating system of these days is, actualy, is all that is seen by the appication.
-It is, in fact, is a virtual computer an appication is runing on.
+Operating system of these days is, actually, is all that is seen by the appication.
+It is, in fact, is a virtual computer an application is running on.
 As such, operating system can create nearly any kind of environment for the program.
 
 But due just to historical reasons traditional operating systems keep to be very
@@ -56,7 +56,7 @@ thin wrap around the CPU providing just some drivers and libraries.
 
 One of things that is quite possible but never even thought about is ability to
 hide from the program fact of stop and start of OS kernel. It is not very hard to
-acheve, and changes situation dramatically.
+achieve, and changes situation dramatically.
 
 Having this as a goal one can design a persistent environment, which changes game rules
 quite a lot. But! Program running in a persistent OS can completely ignore the 
@@ -79,7 +79,7 @@ to be serialized. You are not limited to structure which simplifies
 serializing, and don't have to write corresponding code.
 
 Well, one can say that you still need to be able to save data to file
-to interchange data with traditional software. Yes an no.
+to interchange data with traditional software. Yes and no.
 
 - You don't have to do it from the very beginning - write your program in
   a simple way and add file operations later.
@@ -108,7 +108,7 @@ Don't recreate results
 In traditional OS every program with UI is a complex combination of code that
 builds program state and code that has to re-visualise it through the UI.
 
-Lets imagine we hav to paint day to day temperature curve in traditional OS.
+Lets imagine we have to paint day to day temperature curve in traditional OS.
 
 We will need:
 
@@ -126,7 +126,7 @@ And... that is all. Really.
 
 Window is persistent too, you never have to repaint it. As a result - you 
 do not need to store data at all! No repaint - no storage. No database, no 
-deplpyment rules, no setup. Just 5-10 lines of code.
+deployment rules, no setup. Just 5-10 lines of code.
 
 What Phantom OS is going to be - an environment where simple goals can be
 achieved in a simple way.
@@ -149,14 +149,14 @@ all of the subsequent kernel starts, which we call
 There is also an events in the usual life of the kernel 
 called *snapshots*. These events store consistent image
 of OS userland programs on disk. If kernel will be stopped
-abrupty, the next *restart* will continue executing user
+abruptly, the next *restart* will continue executing user
 programs from last successful *snapshot* point.
 
 As long as *snapshot* is being done and is not finished 
-complletely OS keeps previous two snapshots intact. After
+completely OS keeps previous two snapshots intact. After
 the new snapshot is made the most old one is released.
 
-It means that at any point in time there at least one 
+It means that at any point in time there is at least one 
 complete snapshot available on disk. Most of the time
 there are two.
 
@@ -209,10 +209,10 @@ and create hardware independent abstractions.
   Preemprive multitasking for kernel threads.
 
 **Scheduler**
-  Therad priorities, including real-time.
+  Thread priorities, including real-time.
 
 **Mutex/Cond/Sem**
-  And spinlock as basic primitive. Provide threads 
+  And spinlock as lowest level primitive. Provide threads 
   syncronization and event signalling.
 
 **Physical memory allocator**
@@ -252,12 +252,12 @@ through some API (like, for example, TCP/IP), or
 provide seamless services - persistent memory is
 obvious example.
 
-.. TODO need pictures for all subsystems
+.. TODO need pictures for each subsystem
 
 **Drivers**
   Of course, this is the lowest level which can be directly
   visible to user code. Drivers are divided into block (disk),
-  character, network and graphics drivers. Sound driver is, 
+  character, network and graphics drivers. Sound device driver is, 
   for example, a character driver.
 
   Please note driver/device properties engine. It's a phantom 
@@ -278,12 +278,12 @@ obvious example.
 
 **Unix emulation layer**
   It is possible to compile Phantom kernel with Unix support turned off,
-  but if you want files - Unix prt is a point for filesystems to live in.
+  but if you want files - Unix part is a point for filesystems to live in.
   Is able to run more or less POSIX-compatible Elf executables.
 
 **Persistent pager**
   And snapshots subsystem - this is the heart of Phantom OS.
-  Makes application code to believe that OS never reboots.
+  Makes native application code to believe that OS never reboots.
 
 **Internal classes implementation**
   A channel from object land to kernel API.
@@ -316,7 +316,7 @@ Native Toolchain
 
    Phantom OS programs can be written in its own language which is
    directly supported by ``plc`` (phantom language compiler) or
-   in Java or Python (this part is in experimental stage).
+   in Java or Python (this part is experimental yet).
 
    For Java and Python compilation is done in two stages. First
    native parser compiles code and produces some intermediate
@@ -471,9 +471,9 @@ language and creates a string constant which contains whole contents of
 host computer file.
 
 Phantom OS is a system which can work completely without file system.
-If program needs some resource for its work that resource can be just
+If program needs some resource for its work, the resource can be just
 stored in a variable. An ``import`` operator creates such a variable
-with an asset inside.
+with an asset (file contents) inside.
 
 But it contains a bitmap in a ``.ppm`` file format, and we need a
 bitmap object which can be paint onto the window.
@@ -497,7 +497,7 @@ Note that:
 
 * We brought asset in as an image of some file, which is kept in a string constant.
   But this constant won't consume any memory or disk space as soon as program started,
-  because it will be consumed by ``bmpw.loadFromString()`` and freed by garbage collector.
+  because it will be processed by ``bmpw.loadFromString()`` and freed by garbage collector.
 
 * What we will keep as persistent variable value is internal representation of bitmap,
   which is instanly ready for use. After reboot or any number of reboots it will not
@@ -510,7 +510,7 @@ Note that:
   about which directory it should occupy on target machine and how it will find its assets.
   All the assets are inside. For this program just **one** class image is all the distributive.
   Well, for a more complex program it will be a set of classes (combined in a container,
-  of course), but still there will be no problems with locating assets on a tegrat file system.
+  of course), but still there will be no problems with locating assets on a target file system.
 
 .. note:: Strings are binaries.
 
@@ -561,7 +561,7 @@ Ok, lets go furter.
 
   Parsing a JSON is a method of string class, because nowadays it is really
   frequently used thing. The returned object is of ``directory`` class, which
-  is simply a has map inside.
+  is simply a hash map inside.
 
 ``jtmp = json.get("fact");``
 
@@ -607,7 +607,7 @@ But, frankly, we just don't need it for *this* program. It's goal is to
 paint diagram, and it does. There's no reason for a program to be more complex,
 that it has to.
 
-That is a goal of Phantom OS programming paradigm. Simple things must be implemented
+That is a basic idea of Phantom OS programming paradigm. Simple things must be implemented
 in a simple way.
 
 
@@ -616,22 +616,22 @@ in a simple way.
 Frequently Asked Questions
 --------------------------
 
-Traditional program starts and stops and when stopped, code of program can be updated,
+**Q:** Traditional program starts and stops and when stopped, code of program can be updated,
 a new version of program intalled. If program does not stop, how can you update program
 code?
-  This question is discussed in a separate chaprer, please refer to `Program update`_.
+  **A:** This question is discussed in a separate chaprer, please refer to `Program update`_.
 
-In classic OS we can restart program if it fails. In 
+**Q:** In classic OS we can restart program if it fails. In 
 persistent OS program will run forever and if it failed,
 it can not be restarted?
-  Program can be restarted in persistent OS just as you wish.
+  **A:** Program can be restarted in persistent OS just as you wish.
   The difference is that operating system does not kill
   program on each reboot. It does not forbid user to kill and
   re-run any program.
 
-Other systems will use files for long time. How can Phantom
-communicate wiith them if Phantom does not use files?
-  Phantom lets you write native programs that can work without
+**Q:** Other systems will use files for long time. How can Phantom
+communicate with them if Phantom does not use files?
+  **A:** Phantom lets you write native programs that can work without
   files. But still you can use files. Actually, application
   program can ignore all the Phantom OS special features and
   work as if it was in traditional OS. Or use Phantom specific 
@@ -646,12 +646,25 @@ communicate wiith them if Phantom does not use files?
 .. Persistent OS update
 
 
-There soon will be hardware RAM persistence in all computers and Phantom will not be needed,
+**Q:** There soon will be hardware RAM persistence in all computers and Phantom will not be needed,
 every OS will become a persistent OS.
-  It is not that simple. There are problems that must be solved by any OS to really hide
+  **A:** It is not that simple. There are problems that must be solved by any OS to really hide
   a reboot from software. This book will give some ideas about these problems and solutions
   impemented in Phantom.
 
 
+**Q:** Phantom persistent memory is a paging subsystem. It is processing disk IO in a 
+way that is not controlled by application. Will it lead to performance degradation?
+  **A:** It is usual for modern software to suppose that work set of program 
+  is much less than amount of available RAM. It is not supposed that 
+  program will heavily rely on paging system to move pages to and from 
+  disk. In this situation Phantom's interference with program will be�
+  negligible.
 
-
+  One more thing to note is that amount of disk IO in persistent OS
+  depends on amount of modified memory. For hi-performance software
+  such as games memory modified is a game state, which is not really
+  huge and is modified more or less in place. Good design of persistent
+  memory allocator can insure high affinity of modified memory regions.
+  It means that snapshot footprint won't grow even if snapshots will
+  take longer than usual.
