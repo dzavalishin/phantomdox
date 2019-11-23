@@ -62,7 +62,7 @@ from object stack and puts func return value here too.
 Numeric stack. This stack can contain 32 or 64 (uses two 
 slots) numeric values: ints, longs, floats and doubles.
 
-Int and float are allways 32 bits, long and double are allways
+Int and float are always 32 bits, long and double are always
 64 bits. Longer numerics can be processed in object form only.
 
 Numeric stack contains unboxed numeric binaries and is used
@@ -97,13 +97,15 @@ like ``.internal.string``.
 These classes connect VM with OS kernel and provide
 different API entry points.
 
-Most of intrnal classes have to recreate their objects
+Most of internal classes have to recreate their objects
 state on kernel restart.
 
 Syscall restart engine
 ----------------------
 
 .. index:: single: restart
+
+.. TODO rewrite simpler
 
 Blocking or just long running calls from VM code to
 kernel can not survive snapshot and restart and arranged 
@@ -134,7 +136,7 @@ Zero state creation code
 ------------------------
 
 If OS instance starts for the first time, minimal object land
-environmet has to be created for the first class to be loaded
+environment has to be created for the first class to be loaded
 and be able to build the rest of object land.
 
 Such an environment is created *manually* by the VM init code
@@ -155,6 +157,8 @@ Object allocator
 Object allocator is memory allocation code that works in
 the persistent memory.
 
+.. TODO is 'arena' term ok?
+
 Object allocator is working with memory arenas. Each arena
 is dedicated to either objects of some size or object of 
 some kind. For example, there is arena for integer objects
@@ -174,7 +178,7 @@ Fast and not ideal one is based on reference counts. It
 is good at releasing short living objects fast and
 provides for quick object memory turn around.
 
-Slow GC is a classic mark/sweep algorythm, and, depending
+Slow GC is a classic mark/sweep algorithm, and, depending
 on persistent memory size, can take very long to complete.
 
 

@@ -105,7 +105,7 @@ static_invoke
 
 Pops ``numberOfArgs`` arguments from object stack, than pops object 
 to call method for, then pops class to call method in. Class is 
- checked to be base class for ``this`` that was passed. 
+checked to be base class for ``this`` that was passed. 
  
 This instruction is supposed to be used for constructor calls.
 
@@ -297,8 +297,8 @@ const_pool
 ``const_pool 22;``
 
 Load constant number 22 from constants pool. Constants pool is 
-loaded from class file. Practically is used instead of string constant,
-but supposed to be more widely used.
+loaded from class file. Practically this operation is used instead of string constant,
+but supposed to be used for other purposes too.
 
 -----------------------
 Getting special objects
@@ -442,7 +442,7 @@ logical operations on integer stack top.
 ige, ile, igt, ilt
 ------------------
 
-Comparison operations. Prefix sets just operand types, result is allways integer.
+Comparison operations. Prefix sets just operand types, result is always integer.
 
 
 ishl
@@ -592,7 +592,7 @@ cast
 .. code::
 
     // push object to cast
-    // push tagret type (class reference)
+    // push target type (class reference)
     cast
     // object reference now refers to specified class's interface
 
@@ -607,7 +607,7 @@ stack_reserve
 -------------
 
 Reserve space on object and integer stacks. Used to set stack place
-for stack varibles.
+for stack variables.
 
 arg_count
 ---------
@@ -621,14 +621,14 @@ values differ.
 lock_this, unlock_this
 ----------------------
 
-Not implemented. Supposed to lock/relsease mutex attached to ``this`` as satellite.
+Not implemented. Supposed to lock/release mutex attached to ``this`` as satellite.
 
 .. TODO index satellite mutex
 
 general_lock, general_unlock
 ----------------------------
 
-Not implemented. Supposed to lock/relsease mutex at stack top.
+Not implemented. Supposed to lock/release mutex at stack top.
 
 .. TODO index satellite mutex
 
