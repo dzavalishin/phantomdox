@@ -9,7 +9,7 @@ To be short:
   consistent state, which is not too old.
 - As long as you have reference to any variable, it's state is the same between OS 
   reboots. You don't have (though you can)
-  save prorgram state to files. It is persistent.
+  save program state to files. It is persistent.
 - Managed code. Native Phantom applications are running in a bytecode machine. 
   (But it is worth to mention that Phantom has simple Posix compatibility subsystem too.)
 - Global address space. Phantom OS is an application server. All 
@@ -23,7 +23,7 @@ on restart. Consistently.
 
 Which subsystems Phantom currently includes:
 
-- Kernel itself: threads, syncronization, persistent memory management.
+- Kernel itself: threads, synchronization, persistent memory management.
 - Bytecode virtual machine - running native applications.
 - Posix layer - runs Linux compatible (but not yet persistent) code.
 - Graphics subsystem - Windows, controls, UI.
@@ -47,8 +47,8 @@ Why one more?
 
 Well, here I will try to describe the reasons behind making Phantom OS.
 
-Operating system of these days is, actually, is all that is seen by the appication.
-It is, in fact, is a virtual computer an application is running on.
+Operating system of these days is, actually, all that is seen by the appication.
+It is, in fact, a virtual computer an application is running on.
 As such, operating system can create nearly any kind of environment for the program.
 
 But due just to historical reasons traditional operating systems keep to be very
